@@ -26,6 +26,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.heyqing</groupId>
+            <artifactId>mybatis-plus</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
