@@ -1,6 +1,7 @@
 package com.heyqing.disk.web.exception;
 
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
+import com.heyqing.disk.core.exception.HeyDiskFrameworkException;
 import com.heyqing.disk.core.response.ResponseCode;
 import com.heyqing.disk.core.response.Result;
 import org.springframework.validation.BindException;
@@ -59,6 +60,10 @@ public class WebExceptionHandler {
         return Result.fail(ResponseCode.ERROR_PARAM.getCode(),fieldError.getDefaultMessage());
     }
 
+    @ExceptionHandler(value = HeyDiskFrameworkException.class)
+    public Result heyDiskFrameworkExceptionHandle(HeyDiskFrameworkException e){
+        return Result.fail(ResponseCode.ERROR.getCode(),e.getMessage());
+    }
     @ExceptionHandler(value = RuntimeException.class)
     public Result runtimeExceptionHandler(RuntimeException e){
         return Result.fail(ResponseCode.ERROR.getCode(),e.getMessage());

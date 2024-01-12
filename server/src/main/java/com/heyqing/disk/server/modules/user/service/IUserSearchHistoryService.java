@@ -6,6 +6,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  *
  */
-public interface HeyDiskUserSearchHistoryService extends IService<HeyDiskUserSearchHistory> {
+public interface IUserSearchHistoryService extends IService<HeyDiskUserSearchHistory> {
 
 }
