@@ -1,8 +1,10 @@
 package com.heyqing.disk.server.modules.user.converter;
 
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
+import com.heyqing.disk.server.modules.user.entity.HeyDiskUser;
 import com.heyqing.disk.server.modules.user.po.UserRegisterPO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * ClassName:UserConverter
@@ -22,4 +24,6 @@ public interface UserConverter {
      */
     UserRegisterContext userRegisterPO2UserRegisterContext(UserRegisterPO userRegisterPO);
 
+    @Mapping(target = "password", ignore = true)
+    HeyDiskUser userRegisterContext2HeyDiskUser(UserRegisterContext userRegisterContext);
 }

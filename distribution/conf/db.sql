@@ -75,7 +75,7 @@ row_format = dynamic ;
 -- Table structure for hey_disk_user
 -- ---------------------------------
 
-drop table if exists `hey_disk_uesr`;
+drop table if exists `hey_disk_user`;
 create table `hey_disk_user`
 (
     `user_id` bigint(0) not null comment '用户id',

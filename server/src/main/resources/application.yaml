@@ -12,8 +12,8 @@ spring:
       max-request-size: 3072MB
       max-file-size: 3072MB
   datasource:
-    data-username: root
-    data-password: 1234
+    username: root
+    password: 1234
     url: jdbc:mysql://127.0.0.1:3306/hey_disk?characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
 server:
