@@ -2,9 +2,13 @@ package com.heyqing.disk.server.modules.user;
 
 import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
+import com.heyqing.disk.core.utils.JWTUtil;
 import com.heyqing.disk.server.HeyDiskServerLauncher;
+import com.heyqing.disk.server.modules.user.constants.UserConstants;
+import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.service.IUserService;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,6 +56,71 @@ public class UserTest {
     }
 
     /**
+     * 测试登录成功
+     */
+    @Test
+    public void loginSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        UserLoginContext userLoginContext = createUserLoginContext();
+        String accessToken = iUserService.login(userLoginContext);
+        Assert.isTrue(StringUtils.isNotBlank(accessToken));
+    }
+
+    /**
+     * 测试登录失败：用户名错误
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void wrongUsername() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        UserLoginContext userLoginContext = createUserLoginContext();
+        userLoginContext.setUsername(userLoginContext.getUsername() + "_change");
+        iUserService.login(userLoginContext);
+
+    }
+
+    /**
+     * 测试登录失败：密码错误
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void wrongPassword() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        UserLoginContext userLoginContext = createUserLoginContext();
+        userLoginContext.setPassword(userLoginContext.getPassword() + "_change");
+        iUserService.login(userLoginContext);
+    }
+
+    /**
+     * 用户成功退出登录
+     */
+    @Test
+    public void logoutSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        UserLoginContext userLoginContext = createUserLoginContext();
+        String accessToken = iUserService.login(userLoginContext);
+        Assert.isTrue(StringUtils.isNotBlank(accessToken));
+
+        Long userId = (Long) JWTUtil.analyzeToken(accessToken, UserConstants.LOGIN_USER_ID);
+        iUserService.logout(userId);
+    }
+
+    /***************************************************private***************************************************/
+
+    private final static String USERNAME = "heyqing";
+    private final static String PASSWORD = "12345678";
+
+    /**
      * 构建注册用户上下文信息
      *
      * @return
@@ -59,10 +128,22 @@ public class UserTest {
     private UserRegisterContext createUserRegisterContext() {
 
         UserRegisterContext context = new UserRegisterContext();
-        context.setUsername("heyqing");
-        context.setPassword("12345678");
+        context.setUsername(USERNAME);
+        context.setPassword(PASSWORD);
         context.setQuestion("question");
         context.setAnswer("answer");
         return context;
+    }
+
+    /**
+     * 构建用户登录上下文实体
+     *
+     * @return
+     */
+    private UserLoginContext createUserLoginContext() {
+        UserLoginContext userLoginContext = new UserLoginContext();
+        userLoginContext.setUsername(USERNAME);
+        userLoginContext.setPassword(PASSWORD);
+        return userLoginContext;
     }
 }

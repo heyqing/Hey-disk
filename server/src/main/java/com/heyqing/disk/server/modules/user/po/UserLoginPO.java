@@ -1,6 +1,5 @@
 package com.heyqing.disk.server.modules.user.po;
 
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -11,18 +10,17 @@ import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
 /**
- * ClassName:UserRegisterPo
+ * ClassName:UserLoginPO
  * Package:com.heyqing.disk.server.modules.user.po
  * Description:
- *          注册用户参数实体对象
- * @Date:2024/1/12
+ *          用户登录参数实体
+ * @Date:2024/1/14
  * @Author:Heyqing
  */
 @Data
-@ApiModel(value = "用户注册参数")
-public class UserRegisterPO implements Serializable {
-
-    private static final long serialVersionUID = -55214278130998893L;
+@ApiModel(value = "用户登录参数")
+public class UserLoginPO implements Serializable {
+    private static final long serialVersionUID = 8385674353457319074L;
 
     @ApiModelProperty(value = "用户名",required = true)
     @NotBlank(message = "用户名不能为空")
@@ -33,16 +31,5 @@ public class UserRegisterPO implements Serializable {
     @NotBlank(message = "密码不能为空")
     @Length(min = 8,max = 16,message = "请输入8-16位的密码")
     private String password;
-
-    @ApiModelProperty(value = "密保问题",required = true)
-    @NotBlank(message = "密保问题不能为空")
-    @Length(max = 100,message = "密保问题不能超过100个字符")
-    private String question;
-
-    @ApiModelProperty(value = "密保答案",required = true)
-    @NotBlank(message = "密保答案不能为空")
-    @Length(max = 100,message = "密保答案不能超过100个字符")
-    private String answer;
-
 
 }

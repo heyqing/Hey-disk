@@ -2,8 +2,11 @@ package com.heyqing.disk.server.modules.user.controller;
 
 import com.heyqing.disk.core.response.Result;
 import com.heyqing.disk.core.utils.IdUtil;
+import com.heyqing.disk.server.common.utils.UserIdUtil;
+import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.converter.UserConverter;
+import com.heyqing.disk.server.modules.user.po.UserLoginPO;
 import com.heyqing.disk.server.modules.user.po.UserRegisterPO;
 import com.heyqing.disk.server.modules.user.service.IUserService;
 import io.swagger.annotations.Api;
@@ -47,4 +50,28 @@ public class UserController {
         return Result.data(IdUtil.encrypt(userId));
     }
 
+    @ApiOperation(
+            value = "用户登录接口",
+            notes = "该接口提供了用户登录的功能，成功登录之后会返回具有时效性的accessToken供后续服务使用",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("login")
+    public Result login(@Validated @RequestBody UserLoginPO userLoginPO){
+        UserLoginContext userLoginContext = userConverter.UserLoginPO2UserLoginContext(userLoginPO);
+        String accessToken = iUserService.login(userLoginContext);
+        return Result.data(accessToken);
+    }
+
+    @ApiOperation(
+            value = "用户登出接口",
+            notes = "该接口提供了用户登出的功能",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("logout")
+    public Result logout(){
+        iUserService.logout(UserIdUtil.get());
+        return Result.success();
+    }
 }
