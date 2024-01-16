@@ -11,9 +11,17 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
 
     /**
      * 创建文件夹信息
+     *
      * @param createFolderContext
      * @return
      */
     Long createFolder(CreateFolderContext createFolderContext);
 
+    /**
+     * 查询用户的根文件夹信息
+     *
+     * @param userId
+     * @return
+     */
+    HeyDiskUserFile getUserRootFile(Long userId);
 }

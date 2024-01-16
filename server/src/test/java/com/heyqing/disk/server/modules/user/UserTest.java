@@ -5,9 +5,9 @@ import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.JWTUtil;
 import com.heyqing.disk.server.HeyDiskServerLauncher;
 import com.heyqing.disk.server.modules.user.constants.UserConstants;
-import com.heyqing.disk.server.modules.user.context.UserLoginContext;
-import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
+import com.heyqing.disk.server.modules.user.context.*;
 import com.heyqing.disk.server.modules.user.service.IUserService;
+import com.heyqing.disk.server.modules.user.vo.UserInfoVO;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -115,10 +115,170 @@ public class UserTest {
         iUserService.logout(userId);
     }
 
+    /**
+     * 校验用户名称通过
+     */
+    @Test
+    public void checkUsernameSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckUsernameContext checkUsernameContext = new CheckUsernameContext();
+        checkUsernameContext.setUsername(USERNAME);
+        String question = iUserService.checkUsername(checkUsernameContext);
+        Assert.isTrue(StringUtils.isNotBlank(question));
+    }
+
+    /**
+     * 校验用户名称失败
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void checkUsernameNotExist() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckUsernameContext checkUsernameContext = new CheckUsernameContext();
+        checkUsernameContext.setUsername(USERNAME + "_change");
+        iUserService.checkUsername(checkUsernameContext);
+    }
+
+    /**
+     * 校验用户密保问题通过
+     */
+    @Test
+    public void checkAnswerSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckAnswerContext checkAnswerContext = new CheckAnswerContext();
+        checkAnswerContext.setUsername(USERNAME);
+        checkAnswerContext.setQuestion(QUESTION);
+        checkAnswerContext.setAnswer(ANSWER);
+        String token = iUserService.checkAnswer(checkAnswerContext);
+        Assert.isTrue(StringUtils.isNotBlank(token));
+    }
+
+    /**
+     * 校验用户密保问题答案失败
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void checkAnswerNotExist() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckAnswerContext checkAnswerContext = new CheckAnswerContext();
+        checkAnswerContext.setUsername(USERNAME);
+        checkAnswerContext.setQuestion(QUESTION);
+        checkAnswerContext.setAnswer(ANSWER + "_change");
+        iUserService.checkAnswer(checkAnswerContext);
+    }
+
+    /**
+     * 正常重置用户密码
+     */
+    @Test
+    public void resetPasswordSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckAnswerContext checkAnswerContext = new CheckAnswerContext();
+        checkAnswerContext.setUsername(USERNAME);
+        checkAnswerContext.setQuestion(QUESTION);
+        checkAnswerContext.setAnswer(ANSWER);
+        String token = iUserService.checkAnswer(checkAnswerContext);
+        Assert.isTrue(StringUtils.isNotBlank(token));
+
+        ResetPasswordContext resetPasswordContext = new ResetPasswordContext();
+        resetPasswordContext.setUsername(USERNAME);
+        resetPasswordContext.setPassword(PASSWORD + "_change");
+        resetPasswordContext.setToken(token);
+
+        iUserService.resetPassword(resetPasswordContext);
+    }
+
+    /**
+     * 用户重置密码失败-token异常
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void resetPasswordTokenError() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        CheckAnswerContext checkAnswerContext = new CheckAnswerContext();
+        checkAnswerContext.setUsername(USERNAME);
+        checkAnswerContext.setQuestion(QUESTION);
+        checkAnswerContext.setAnswer(ANSWER);
+        String token = iUserService.checkAnswer(checkAnswerContext);
+        Assert.isTrue(StringUtils.isNotBlank(token));
+
+        ResetPasswordContext resetPasswordContext = new ResetPasswordContext();
+        resetPasswordContext.setUsername(USERNAME);
+        resetPasswordContext.setPassword(PASSWORD + "_change");
+        resetPasswordContext.setToken(token + "_change");
+
+        iUserService.resetPassword(resetPasswordContext);
+    }
+
+    /**
+     * 正常在线修改密码
+     */
+    @Test
+    public void changePasswordSuccess() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        ChangePasswordContext changePasswordContext = new ChangePasswordContext();
+        changePasswordContext.setUserId(register);
+        changePasswordContext.setOldPassword(PASSWORD);
+        changePasswordContext.setNewPassword(PASSWORD + "_change");
+
+        iUserService.changePassword(changePasswordContext);
+    }
+
+    /**
+     * 修改密码失败-旧密码错误
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void changePasswordFailByWrongOldPassword() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        ChangePasswordContext changePasswordContext = new ChangePasswordContext();
+        changePasswordContext.setUserId(register);
+        changePasswordContext.setOldPassword(PASSWORD + "_change");
+        changePasswordContext.setNewPassword(PASSWORD + "_change");
+
+        iUserService.changePassword(changePasswordContext);
+    }
+
+    /**
+     * 查询用户基本信息
+     */
+    @Test
+    public void testQueryUserInfo() {
+        UserRegisterContext context = createUserRegisterContext();
+        Long register = iUserService.register(context);
+        Assert.isTrue(register.longValue() > 0L);
+
+        UserInfoVO userInfoVO = iUserService.info(register);
+
+        Assert.notNull(userInfoVO);
+    }
+
     /***************************************************private***************************************************/
 
     private final static String USERNAME = "heyqing";
     private final static String PASSWORD = "12345678";
+    private final static String QUESTION = "question";
+    private final static String ANSWER = "answer";
 
     /**
      * 构建注册用户上下文信息
@@ -130,8 +290,8 @@ public class UserTest {
         UserRegisterContext context = new UserRegisterContext();
         context.setUsername(USERNAME);
         context.setPassword(PASSWORD);
-        context.setQuestion("question");
-        context.setAnswer("answer");
+        context.setQuestion(QUESTION);
+        context.setAnswer(ANSWER);
         return context;
     }
 

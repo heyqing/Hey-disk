@@ -20,4 +20,7 @@
         salt,question,answer,
         create_time,update_time
     </sql>
+    <select id="selectQuestionByUsername" resultType="java.lang.String">
+        select question from hey_disk_user where username = #{username}
+    </select>
 </mapper>

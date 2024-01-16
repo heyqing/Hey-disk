@@ -10,14 +10,16 @@ import com.heyqing.disk.core.utils.JWTUtil;
 import com.heyqing.disk.core.utils.PasswordUtil;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.user.constants.UserConstants;
-import com.heyqing.disk.server.modules.user.context.UserLoginContext;
-import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
+import com.heyqing.disk.server.modules.user.context.*;
 import com.heyqing.disk.server.modules.user.converter.UserConverter;
 import com.heyqing.disk.server.modules.user.entity.HeyDiskUser;
 import com.heyqing.disk.server.modules.user.service.IUserService;
 import com.heyqing.disk.server.modules.user.mapper.HeyDiskUserMapper;
+import com.heyqing.disk.server.modules.user.vo.UserInfoVO;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -97,7 +99,200 @@ public class UserServiceImpl extends ServiceImpl<HeyDiskUserMapper, HeyDiskUser>
         }
     }
 
+    /**
+     * 用户忘记密码-校验用户名称
+     *
+     * @param checkUsernameContext
+     * @return
+     */
+    @Override
+    public String checkUsername(CheckUsernameContext checkUsernameContext) {
+        String question = baseMapper.selectQuestionByUsername(checkUsernameContext.getUsername());
+        if (StringUtils.isBlank(question)) {
+            throw new HeyDiskBusinessException("没有此用户");
+        }
+        return question;
+    }
+
+    /**
+     * 用户忘记密码-校验密保答案
+     *
+     * @param checkAnswerContext
+     * @return
+     */
+    @Override
+    public String checkAnswer(CheckAnswerContext checkAnswerContext) {
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("username", checkAnswerContext.getUsername());
+        queryWrapper.eq("question", checkAnswerContext.getQuestion());
+        queryWrapper.eq("answer", checkAnswerContext.getAnswer());
+        int count = count(queryWrapper);
+        if (count == 0) {
+            throw new HeyDiskBusinessException("密保答案错误");
+        }
+        return generateCheckAnswerToken(checkAnswerContext);
+    }
+
+    /**
+     * 用户忘记密码-用户重置密码
+     * 1、校验token是否有效
+     * 2、重置密码
+     *
+     * @param resetPasswordContext
+     */
+    @Override
+    public void resetPassword(ResetPasswordContext resetPasswordContext) {
+        checkForgetPasswordToken(resetPasswordContext);
+        checkAndResetUserPassword(resetPasswordContext);
+    }
+
+    /**
+     * 用户在线修改密码
+     * 1、校验旧密码
+     * 2、重置新密码
+     * 3、退出当前登录
+     *
+     * @param changePasswordContext
+     */
+    @Override
+    public void changePassword(ChangePasswordContext changePasswordContext) {
+        checkOldPassword(changePasswordContext);
+        doChangePassword(changePasswordContext);
+        exitLoginStatus(changePasswordContext);
+    }
+
+    /**
+     * 查询在线用户基本信息
+     * 1、查询用户的基本信息实体
+     * 2、查询用户的跟文件夹信息
+     * 3、拼装VO对象返回
+     *
+     * @param userId
+     * @return
+     */
+    @Override
+    public UserInfoVO info(Long userId) {
+        HeyDiskUser entity = getById(userId);
+        if (Objects.isNull(entity)) {
+            throw new HeyDiskBusinessException("用户信息查询失败");
+        }
+        HeyDiskUserFile heyDiskUserFile = getUserRootFileInfo(userId);
+        if (Objects.isNull(heyDiskUserFile)){
+            throw new HeyDiskBusinessException("查询用户根文件夹信息失败");
+        }
+        return userConverter.assembleUserInfoVO(entity, heyDiskUserFile);
+    }
+
+
     /***************************************************private***************************************************/
+
+    /**
+     * 获取用户根目录信息
+     *
+     * @param userId
+     * @return
+     */
+    private HeyDiskUserFile getUserRootFileInfo(Long userId) {
+        return iUserFileService.getUserRootFile(userId);
+    }
+
+
+    /**
+     * 退出用户登录状态
+     *
+     * @param changePasswordContext
+     */
+    private void exitLoginStatus(ChangePasswordContext changePasswordContext) {
+        logout(changePasswordContext.getUserId());
+    }
+
+    /**
+     * 修改新密码
+     *
+     * @param changePasswordContext
+     */
+    private void doChangePassword(ChangePasswordContext changePasswordContext) {
+        String newPassword = changePasswordContext.getNewPassword();
+        HeyDiskUser entity = changePasswordContext.getEntity();
+        String salt = entity.getSalt();
+        String encNewPassword = PasswordUtil.encryptPassword(salt, newPassword);
+        entity.setPassword(encNewPassword);
+        if (!updateById(entity)) {
+            throw new HeyDiskBusinessException("修改用户密码失败");
+        }
+    }
+
+    /**
+     * 校验用户旧密码
+     * 该步骤会查询并封装用户的实体信息到上下文信息中
+     *
+     * @param changePasswordContext
+     */
+    private void checkOldPassword(ChangePasswordContext changePasswordContext) {
+        Long userId = changePasswordContext.getUserId();
+        String oldPassword = changePasswordContext.getOldPassword();
+        HeyDiskUser entity = getById(userId);
+        if (Objects.isNull(entity)) {
+            throw new HeyDiskBusinessException("旧密码错误");
+        }
+        changePasswordContext.setEntity(entity);
+        String encOldPassword = PasswordUtil.encryptPassword(entity.getSalt(), oldPassword);
+        String dbOldPassword = entity.getPassword();
+        if (!Objects.equals(encOldPassword, dbOldPassword)) {
+            throw new HeyDiskBusinessException("旧密码错误");
+        }
+    }
+
+    /**
+     * 校验用户信息并重置用户密码
+     *
+     * @param resetPasswordContext
+     */
+    private void checkAndResetUserPassword(ResetPasswordContext resetPasswordContext) {
+        String username = resetPasswordContext.getUsername();
+        String password = resetPasswordContext.getPassword();
+        HeyDiskUser entity = getHeyDiskUserByUsername(username);
+        if (Objects.isNull(entity)) {
+            throw new HeyDiskBusinessException("用户信息不存在");
+        }
+        String newDbPassword = PasswordUtil.encryptPassword(entity.getSalt(), password);
+        entity.setPassword(newDbPassword);
+        entity.setUpdateTime(new Date());
+
+        if (!updateById(entity)) {
+            throw new HeyDiskBusinessException("重置用户密码失败");
+        }
+
+    }
+
+    /**
+     * 验证忘记密码的token是否有效
+     *
+     * @param resetPasswordContext
+     */
+    private void checkForgetPasswordToken(ResetPasswordContext resetPasswordContext) {
+        String token = resetPasswordContext.getToken();
+        Object value = JWTUtil.analyzeToken(token, UserConstants.FORGET_USERNAME);
+        if (Objects.isNull(value)) {
+            throw new HeyDiskBusinessException(ResponseCode.TOKEN_EXPIRE);
+        }
+        String tokenUsername = String.valueOf(value);
+        if (!Objects.equals(tokenUsername, resetPasswordContext.getUsername())) {
+            throw new HeyDiskBusinessException("token错误");
+        }
+    }
+
+    /**
+     * 生成用户忘记密码-校验密保答案通过的临时token
+     * 时效为 5 min
+     *
+     * @param checkAnswerContext
+     * @return
+     */
+    private String generateCheckAnswerToken(CheckAnswerContext checkAnswerContext) {
+        String token = JWTUtil.generateToken(checkAnswerContext.getUsername(), UserConstants.FORGET_USERNAME, checkAnswerContext.getUsername(), UserConstants.FIVE_MINUTES_LONG);
+        return token;
+    }
 
     /**
      * 创建用户的更目录信息

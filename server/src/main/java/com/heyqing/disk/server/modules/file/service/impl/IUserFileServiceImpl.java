@@ -40,6 +40,16 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
                 null);
     }
 
+    @Override
+    public HeyDiskUserFile getUserRootFile(Long userId) {
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("user_id",userId);
+        queryWrapper.eq("parent_id",FileConstants.TOP_PARENT_ID);
+        queryWrapper.eq("del_flag",DelFlagEnum.NO.getCode());
+        queryWrapper.eq("folder_flag",FolderFlagEnum.YES.getCode());
+        return getOne(queryWrapper);
+    }
+
     /***************************************************private***************************************************/
 
     /**
