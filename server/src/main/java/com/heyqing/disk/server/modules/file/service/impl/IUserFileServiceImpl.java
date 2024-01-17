@@ -7,15 +7,20 @@ import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
+import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
 import com.heyqing.disk.server.modules.file.enums.FolderFlagEnum;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
+import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -40,17 +45,100 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
                 null);
     }
 
+    /**
+     * 查询用户的根文件夹信息
+     *
+     * @param userId
+     * @return
+     */
     @Override
     public HeyDiskUserFile getUserRootFile(Long userId) {
         QueryWrapper queryWrapper = new QueryWrapper();
-        queryWrapper.eq("user_id",userId);
-        queryWrapper.eq("parent_id",FileConstants.TOP_PARENT_ID);
-        queryWrapper.eq("del_flag",DelFlagEnum.NO.getCode());
-        queryWrapper.eq("folder_flag",FolderFlagEnum.YES.getCode());
+        queryWrapper.eq("user_id", userId);
+        queryWrapper.eq("parent_id", FileConstants.TOP_PARENT_ID);
+        queryWrapper.eq("del_flag", DelFlagEnum.NO.getCode());
+        queryWrapper.eq("folder_flag", FolderFlagEnum.YES.getCode());
         return getOne(queryWrapper);
     }
 
+    /**
+     * 查询用户的文件信息列表
+     *
+     * @param queryFileListContext
+     * @return
+     */
+    @Override
+    public List<HeyDiskUserFileVO> getFileList(QueryFileListContext queryFileListContext) {
+        return baseMapper.selectFileList(queryFileListContext);
+    }
+
+    /**
+     * 更新文件名称
+     * 1、校验更新文件名称的条件
+     * 2、执行更新文件名称的操作
+     *
+     * @param updateFilenameContext
+     */
+    @Override
+    public void updateFilename(UpdateFilenameContext updateFilenameContext) {
+        checkUpdateFilenameCondition(updateFilenameContext);
+        doUpdateFilename(updateFilenameContext);
+    }
+
+
     /***************************************************private***************************************************/
+
+    /**
+     * 执行文件文件重命名操作
+     *
+     * @param updateFilenameContext
+     */
+    private void doUpdateFilename(UpdateFilenameContext updateFilenameContext) {
+        HeyDiskUserFile entity = updateFilenameContext.getEntity();
+
+        entity.setFilename(updateFilenameContext.getNewFilename());
+        entity.setUpdateUser(updateFilenameContext.getUserId());
+        entity.setUpdateTime(new Date());
+
+        if (!updateById(entity)){
+            throw new HeyDiskBusinessException("更新文件夹名称失败");
+        }
+    }
+
+    /**
+     * 更新文件名称的条件检验
+     * 1、文件id是有效的
+     * 2、用户是有权限的
+     * 3、新旧名称不能一样
+     * 4、不能与当前文件的其他子文件夹（即兄弟文件夹）名称重复
+     *
+     * @param updateFilenameContext
+     */
+    private void checkUpdateFilenameCondition(UpdateFilenameContext updateFilenameContext) {
+        Long fileId = updateFilenameContext.getFileId();
+        HeyDiskUserFile entity = getById(fileId);
+
+        if (Objects.isNull(entity)) {
+            throw new HeyDiskBusinessException("该文件id无效");
+        }
+        if (!Objects.equals(entity.getUserId(), updateFilenameContext.getUserId())) {
+            throw new HeyDiskBusinessException("当前用户无修改该文件的权限");
+        }
+        if (Objects.equals(entity.getFilename(), updateFilenameContext.getNewFilename())) {
+            throw new HeyDiskBusinessException("新旧文件名称不能一致");
+        }
+
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("parent_id", entity.getParentId());
+        queryWrapper.eq("filename", updateFilenameContext.getNewFilename());
+        int count = count(queryWrapper);
+        if (count > 0) {
+            throw new HeyDiskBusinessException("该名称已存在");
+        }
+
+        updateFilenameContext.setEntity(entity);
+    }
+
 
     /**
      * 保存用户文件的映射记录

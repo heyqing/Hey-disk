@@ -27,4 +27,28 @@
         create_user,create_time,update_user,
         update_time
     </sql>
+    <select id="selectFileList" resultType="com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO">
+        select
+            file_id as fileId,
+            parent_id as parentId,
+            filename as filename,
+            file_size_desc as fileSizeDesc,
+            folder_flag as folderFlag,
+            file_type as fileType,
+            update_time as updateTime
+        from
+            hey_disk_user_file
+        where
+            user_id = #{param.userId}
+        <if test="param.parentId != null and param.parentId != -1">
+            and parent_id = #{param.parentId}
+        </if>
+        <if test="param.fileTypeArray != null">
+            and file_type in
+            <foreach collection="param.fileTypeArray" open="(" close=")" item="item" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        and del_flag = #{param.delFlag}
+    </select>
 </mapper>
