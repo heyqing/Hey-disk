@@ -1,12 +1,15 @@
 package com.heyqing.disk.server.modules.file.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heyqing.disk.core.constants.HeyDiskConstants;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.IdUtil;
+import com.heyqing.disk.server.common.event.file.DeleteFileEvent;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
 import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
@@ -16,17 +19,29 @@ import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
  */
 @Service(value = "")
-public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, HeyDiskUserFile> implements IUserFileService {
+public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, HeyDiskUserFile> implements IUserFileService, ApplicationContextAware {
+
+    private ApplicationContext applicationContext;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
 
     /**
      * 创建文件夹信息
@@ -85,8 +100,82 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         doUpdateFilename(updateFilenameContext);
     }
 
+    /**
+     * 批量删除用户文件
+     * 1、校验删除文件
+     * 2、执行批量删除动作
+     * 3、发布批量删除文件的事件，给其他模块订阅使用
+     *
+     * @param context
+     */
+    @Override
+    public void deleteFile(DeleteFileContext context) {
+        checkFileDeleteCondition(context);
+        doDeleteFile(context);
+        afterFileDelete(context);
+    }
+
 
     /***************************************************private***************************************************/
+
+    /**
+     * 执行文件删除的操作
+     *
+     * @param context
+     */
+    private void doDeleteFile(DeleteFileContext context) {
+        List<Long> fileIdList = context.getFileIdList();
+        UpdateWrapper updateWrapper = new UpdateWrapper();
+        updateWrapper.in("file_id", fileIdList);
+        updateWrapper.set("del_flag", DelFlagEnum.YES.getCode());
+        updateWrapper.set("update_time", new Date());
+        if (!update(updateWrapper)) {
+            throw new HeyDiskBusinessException("文件删除失败");
+        }
+    }
+
+    /**
+     * 文件删除的后置操作
+     * 1、对外发布文件删除事件
+     *
+     * @param context
+     */
+    private void afterFileDelete(DeleteFileContext context) {
+        DeleteFileEvent deleteFileEvent = new DeleteFileEvent(this, context.getFileIdList());
+        applicationContext.publishEvent(deleteFileEvent);
+    }
+
+    /**
+     * 删除文件之前的前置校验
+     * 1、文件id合法效益
+     * 2、用户拥有删除文件的权限
+     *
+     * @param context
+     */
+    private void checkFileDeleteCondition(DeleteFileContext context) {
+
+        List<Long> fileIdList = context.getFileIdList();
+        List<HeyDiskUserFile> heyDiskUserFiles = listByIds(fileIdList);
+        if (heyDiskUserFiles.size() != fileIdList.size()) {
+            throw new HeyDiskBusinessException("存在不合法的文件记录");
+        }
+        Set<Long> fileIdSet = heyDiskUserFiles.stream().map(HeyDiskUserFile::getFileId).collect(Collectors.toSet());
+        int oldSize = fileIdSet.size();
+        fileIdSet.addAll(fileIdList);
+        int newSize = fileIdSet.size();
+        if (oldSize != newSize) {
+            throw new HeyDiskBusinessException("存在不合法的文件记录");
+        }
+        Set<Long> userIdSet = heyDiskUserFiles.stream().map(HeyDiskUserFile::getUserId).collect(Collectors.toSet());
+        if (userIdSet.size() != 1) {
+            throw new HeyDiskBusinessException("存在不合法的文件记录");
+        }
+        Long dbUserId = userIdSet.stream().findFirst().get();
+        if (!Objects.equals(dbUserId, context.getUserId())) {
+            throw new HeyDiskBusinessException("该用户无权限");
+        }
+    }
+
 
     /**
      * 执行文件文件重命名操作
@@ -100,7 +189,7 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         entity.setUpdateUser(updateFilenameContext.getUserId());
         entity.setUpdateTime(new Date());
 
-        if (!updateById(entity)){
+        if (!updateById(entity)) {
             throw new HeyDiskBusinessException("更新文件夹名称失败");
         }
     }

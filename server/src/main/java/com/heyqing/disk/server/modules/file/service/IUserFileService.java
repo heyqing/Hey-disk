@@ -1,6 +1,7 @@
 package com.heyqing.disk.server.modules.file.service;
 
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
 import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
@@ -44,4 +45,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @param updateFilenameContext
      */
     void updateFilename(UpdateFilenameContext updateFilenameContext);
+
+    /**
+     * 批量删除文件
+     *
+     * @param context
+     */
+    void deleteFile(DeleteFileContext context);
 }

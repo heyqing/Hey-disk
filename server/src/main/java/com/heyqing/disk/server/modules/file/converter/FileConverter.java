@@ -1,8 +1,10 @@
 package com.heyqing.disk.server.modules.file.converter;
 
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
+import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
 import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -25,16 +27,26 @@ public interface FileConverter {
      * @param createFolderPO
      * @return
      */
-    @Mapping(target = "parentId",expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(createFolderPO.getParentId()))")
-    @Mapping(target = "userId",expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    @Mapping(target = "parentId", expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(createFolderPO.getParentId()))")
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
     CreateFolderContext createFolderPO2CreateFolderContext(CreateFolderPO createFolderPO);
 
     /**
      * UpdateFilenamePO转化UpdateFilenameContext
+     *
      * @param updateFilenamePO
      * @return
      */
-    @Mapping(target = "fileId",expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(updateFilenamePO.getFileId()))")
-    @Mapping(target = "userId",expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    @Mapping(target = "fileId", expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(updateFilenamePO.getFileId()))")
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
     UpdateFilenameContext updateFilenamePO2UpdateFilenameContext(UpdateFilenamePO updateFilenamePO);
+
+    /**
+     * DeleteFilePO转化DeleteFileContext
+     *
+     * @param deleteFilePO
+     * @return
+     */
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    DeleteFileContext deleteFilePO2DeleteFileContext(DeleteFilePO deleteFilePO);
 }

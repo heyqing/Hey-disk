@@ -7,11 +7,13 @@ import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.common.utils.UserIdUtil;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
 import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.converter.FileConverter;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
 import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
+import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
 import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
@@ -90,6 +92,22 @@ public class FileController {
     public Result updateFilename(@Validated @RequestBody UpdateFilenamePO updateFilenamePO){
         UpdateFilenameContext context = fileConverter.updateFilenamePO2UpdateFilenameContext(updateFilenamePO);
         iUserFileService.updateFilename(context);
+        return Result.success();
+    }
+
+    @ApiOperation(
+            value = "批量删除文件",
+            notes = "该接口提供了批量删除文件的功能",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @DeleteMapping("file/delete")
+    public Result deleteFile(@Validated @RequestBody DeleteFilePO deleteFilePO){
+        DeleteFileContext context = fileConverter.deleteFilePO2DeleteFileContext(deleteFilePO);
+        String fileIds = deleteFilePO.getFileIds();
+        List<Long> fileIdList = Splitter.on(HeyDiskConstants.COMMON_SEPARATOR).splitToList(fileIds).stream().map(IdUtil::decrypt).collect(Collectors.toList());
+        context.setFileIdList(fileIdList);
+        iUserFileService.deleteFile(context);
         return Result.success();
     }
 }

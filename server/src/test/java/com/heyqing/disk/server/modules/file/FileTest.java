@@ -4,6 +4,7 @@ import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.server.HeyDiskServerLauncher;
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
+import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
 import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
@@ -13,6 +14,7 @@ import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.service.IUserService;
 import com.heyqing.disk.server.modules.user.vo.UserInfoVO;
+import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -210,6 +212,79 @@ public class FileTest {
 
         iUserFileService.updateFilename(updateFilenameContext);
     }
+
+    /**
+     * 测试文件删除-失败-fileId
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void testDeleteFileFailByWrongFileId(){
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long fileId = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        DeleteFileContext deleteFileContext = new DeleteFileContext();
+        List<Long> fileIdList = Lists.newArrayList();
+        fileIdList.add(fileId + 1L);
+        deleteFileContext.setFileIdList(fileIdList);
+        deleteFileContext.setUserId(userId);
+        iUserFileService.deleteFile(deleteFileContext);
+    }
+
+    /**
+     * 测试文件删除-失败-userId
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void testDeleteFileFailByWrongUserId(){
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long fileId = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        DeleteFileContext deleteFileContext = new DeleteFileContext();
+        List<Long> fileIdList = Lists.newArrayList();
+        fileIdList.add(fileId);
+        deleteFileContext.setFileIdList(fileIdList);
+        deleteFileContext.setUserId(userId + 1L);
+        iUserFileService.deleteFile(deleteFileContext);
+    }
+
+    /**
+     * 测试文件删除-成功
+     */
+    @Test
+    public void testDeleteFileSuccess(){
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long fileId = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        DeleteFileContext deleteFileContext = new DeleteFileContext();
+        List<Long> fileIdList = Lists.newArrayList();
+        fileIdList.add(fileId);
+        deleteFileContext.setFileIdList(fileIdList);
+        deleteFileContext.setUserId(userId);
+        iUserFileService.deleteFile(deleteFileContext);
+    }
+
     /***************************************************private***************************************************/
 
     private final static String USERNAME = "heyqing";
