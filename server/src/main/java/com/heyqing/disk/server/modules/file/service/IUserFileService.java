@@ -1,9 +1,6 @@
 package com.heyqing.disk.server.modules.file.service;
 
-import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
-import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
-import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
-import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
+import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
@@ -47,9 +44,17 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
     void updateFilename(UpdateFilenameContext updateFilenameContext);
 
     /**
-     * 批量删除文件
+     * 批量删除文件服务
      *
      * @param context
      */
     void deleteFile(DeleteFileContext context);
+
+    /**
+     * 文件秒传服务
+     *
+     * @param context
+     * @return
+     */
+    boolean secUpload(SecUploadFileContext context);
 }

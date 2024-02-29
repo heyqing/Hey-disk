@@ -6,17 +6,16 @@ import com.heyqing.disk.core.response.Result;
 import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.common.utils.UserIdUtil;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
-import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
-import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
-import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
-import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
+import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.converter.FileConverter;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
 import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
 import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
+import com.heyqing.disk.server.modules.file.po.SecUploadFilePO;
 import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -38,6 +37,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @Validated
+@Api(tags = "文件模块")
 public class FileController {
 
     @Autowired
@@ -109,5 +109,21 @@ public class FileController {
         context.setFileIdList(fileIdList);
         iUserFileService.deleteFile(context);
         return Result.success();
+    }
+
+    @ApiOperation(
+            value = "文件秒传",
+            notes = "该接口提供了文件秒传的功能",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("file/sec-upload")
+    public Result secUpload(@Validated @RequestBody SecUploadFilePO secUploadFilePO){
+        SecUploadFileContext context = fileConverter.secUploadFilePO2SecUploadFileContext(secUploadFilePO);
+        boolean success = iUserFileService.secUpload(context);
+        if (success){
+            return Result.success();
+        }
+        return Result.fail("文件唯一标识不存在，请手动执行文件上传操作");
     }
 }

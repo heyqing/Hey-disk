@@ -2,27 +2,31 @@ package com.heyqing.disk.server.modules.file.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heyqing.disk.core.constants.HeyDiskConstants;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
+import com.heyqing.disk.core.utils.FileUtil;
 import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.common.event.file.DeleteFileEvent;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
-import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
-import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
-import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
-import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
+import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
+import com.heyqing.disk.server.modules.file.enums.FileTypeEnum;
 import com.heyqing.disk.server.modules.file.enums.FolderFlagEnum;
+import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -33,10 +37,13 @@ import java.util.stream.Collectors;
 /**
  *
  */
-@Service(value = "")
+@Service(value = "userFileService")
 public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, HeyDiskUserFile> implements IUserFileService, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private IFileService iFileService;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -115,8 +122,51 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         afterFileDelete(context);
     }
 
+    /**
+     * 文件秒传
+     * <p>
+     * 1、通过文件唯一标识查找对应的实体文件记录
+     * 2、没有查到-直接返回
+     * 3、查到-直接挂载关联关系，返回秒传成功
+     *
+     * @param context
+     * @return
+     */
+    @Override
+    public boolean secUpload(SecUploadFileContext context) {
+        HeyDiskFile record = getFileByUserIdAndIdentifier(context.getUserId(), context.getIdentifier());
+        if (Objects.isNull(record)) {
+            return false;
+        }
+        saveUserFile(context.getParentId(),
+                context.getFilename(),
+                FolderFlagEnum.NO,
+                FileTypeEnum.getFileTypeCode(FileUtil.getFileSuffix(context.getFilename())),
+                record.getFileId(),
+                context.getUserId(),
+                record.getFileSizeDesc());
+        return true;
+    }
+
 
     /***************************************************private***************************************************/
+
+    /**
+     *
+     * @param userId
+     * @param identifier
+     * @return
+     */
+    private HeyDiskFile getFileByUserIdAndIdentifier(Long userId, String identifier) {
+        QueryWrapper queryWrapper = Wrappers.query();
+        queryWrapper.eq("create_user",userId);
+        queryWrapper.eq("identifier",identifier);
+        List<HeyDiskFile> records = iFileService.list(queryWrapper);
+        if (CollectionUtils.isEmpty(records)){
+            return null;
+        }
+        return records.get(HeyDiskConstants.ZERO_INT);
+    }
 
     /**
      * 执行文件删除的操作

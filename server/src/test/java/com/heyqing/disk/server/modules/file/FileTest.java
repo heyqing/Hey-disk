@@ -2,12 +2,12 @@ package com.heyqing.disk.server.modules.file;
 
 import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
+import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.HeyDiskServerLauncher;
-import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
-import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
-import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
-import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
+import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
+import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.user.context.UserLoginContext;
@@ -23,6 +23,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -43,6 +44,8 @@ public class FileTest {
     private IUserFileService iUserFileService;
     @Autowired
     private IUserService iUserService;
+    @Autowired
+    private IFileService iFileService;
 
 
     /**
@@ -84,7 +87,7 @@ public class FileTest {
      * 测试文件夹重命名-失败-fileId
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testUpdateFilenameFailByWrongFileId(){
+    public void testUpdateFilenameFailByWrongFileId() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -109,7 +112,7 @@ public class FileTest {
      * 测试文件夹重命名-失败-userId
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testUpdateFilenameFailByWrongUserId(){
+    public void testUpdateFilenameFailByWrongUserId() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -134,7 +137,7 @@ public class FileTest {
      * 测试文件重命名-失败-重复
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testUpdateFilenameFailByWrongFilename(){
+    public void testUpdateFilenameFailByWrongFilename() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -160,7 +163,7 @@ public class FileTest {
      * 测试文件夹重命名-失败-与兄弟文件夹重复
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testUpdateFilenameFailByFilenameUnAvailable(){
+    public void testUpdateFilenameFailByFilenameUnAvailable() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -192,7 +195,7 @@ public class FileTest {
      * 测试文件夹重命名-成功
      */
     @Test
-    public void testUpdateFilenameSuccess(){
+    public void testUpdateFilenameSuccess() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -217,7 +220,7 @@ public class FileTest {
      * 测试文件删除-失败-fileId
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testDeleteFileFailByWrongFileId(){
+    public void testDeleteFileFailByWrongFileId() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -241,7 +244,7 @@ public class FileTest {
      * 测试文件删除-失败-userId
      */
     @Test(expected = HeyDiskBusinessException.class)
-    public void testDeleteFileFailByWrongUserId(){
+    public void testDeleteFileFailByWrongUserId() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -265,7 +268,7 @@ public class FileTest {
      * 测试文件删除-成功
      */
     @Test
-    public void testDeleteFileSuccess(){
+    public void testDeleteFileSuccess() {
         Long userId = register();
         UserInfoVO userInfoVO = info(userId);
 
@@ -283,6 +286,60 @@ public class FileTest {
         deleteFileContext.setFileIdList(fileIdList);
         deleteFileContext.setUserId(userId);
         iUserFileService.deleteFile(deleteFileContext);
+    }
+
+    /**
+     * 测试文件秒传-成功
+     */
+    @Test
+    public void testSceUploadSuccess() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        String identifier = "identifier";
+        HeyDiskFile record = new HeyDiskFile();
+        record.setFileId(IdUtil.get());
+        record.setFilename("filename");
+        record.setRealPath("realPath");
+        record.setFileSize("dileSize");
+        record.setFileSizeDesc("desc");
+        record.setFileSuffix("suffix");
+        record.setFilePreviewContentType("");
+        record.setIdentifier(identifier);
+        record.setCreateUser(userId);
+        record.setCreateTime(new Date());
+
+        boolean save = iFileService.save(record);
+        Assert.isTrue(save);
+
+        SecUploadFileContext context = new SecUploadFileContext();
+        context.setIdentifier(identifier);
+        context.setFilename("filename");
+        context.setParentId(userInfoVO.getRootFileId());
+        context.setUserId(userId);
+
+        boolean success = iUserFileService.secUpload(context);
+        Assert.isTrue(success);
+    }
+
+    /**
+     * 测试文件秒传-失败
+     */
+    @Test
+    public void testSceUploadFail() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        String identifier = "identifier";
+
+        SecUploadFileContext context = new SecUploadFileContext();
+        context.setIdentifier(identifier);
+        context.setFilename("filename");
+        context.setParentId(userInfoVO.getRootFileId());
+        context.setUserId(userId);
+
+        boolean success = iUserFileService.secUpload(context);
+        Assert.isFalse(success);
     }
 
     /***************************************************private***************************************************/

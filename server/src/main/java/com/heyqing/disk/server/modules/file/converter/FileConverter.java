@@ -2,9 +2,11 @@ package com.heyqing.disk.server.modules.file.converter;
 
 import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
 import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
+import com.heyqing.disk.server.modules.file.context.SecUploadFileContext;
 import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
 import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
 import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
+import com.heyqing.disk.server.modules.file.po.SecUploadFilePO;
 import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -49,4 +51,14 @@ public interface FileConverter {
      */
     @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
     DeleteFileContext deleteFilePO2DeleteFileContext(DeleteFilePO deleteFilePO);
+
+    /**
+     * SecUploadFilePO转化SecUploadFileContext
+     *
+     * @param secUploadFilePO
+     * @return
+     */
+    @Mapping(target = "parentId", expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(secUploadFilePO.getParentId()))")
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    SecUploadFileContext secUploadFilePO2SecUploadFileContext(SecUploadFilePO secUploadFilePO);
 }

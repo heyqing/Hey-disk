@@ -6,6 +6,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  *
  */
-public interface HeyDiskFileService extends IService<HeyDiskFile> {
+public interface IFileService extends IService<HeyDiskFile> {
 
 }
