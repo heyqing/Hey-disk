@@ -51,6 +51,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.heyqing</groupId>
+            <artifactId>storage-engine-local</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>

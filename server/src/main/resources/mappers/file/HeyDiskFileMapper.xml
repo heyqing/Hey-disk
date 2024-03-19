@@ -23,4 +23,5 @@
         file_preview_content_type,identifier,create_user,
         create_time
     </sql>
+
 </mapper>

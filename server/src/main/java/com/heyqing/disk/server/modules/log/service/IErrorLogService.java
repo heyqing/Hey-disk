@@ -6,6 +6,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  *
  */
-public interface HeyDiskErrorLogService extends IService<HeyDiskErrorLog> {
+public interface IErrorLogService extends IService<HeyDiskErrorLog> {
 
 }

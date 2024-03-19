@@ -1,13 +1,7 @@
 package com.heyqing.disk.server.modules.file.converter;
 
-import com.heyqing.disk.server.modules.file.context.CreateFolderContext;
-import com.heyqing.disk.server.modules.file.context.DeleteFileContext;
-import com.heyqing.disk.server.modules.file.context.SecUploadFileContext;
-import com.heyqing.disk.server.modules.file.context.UpdateFilenameContext;
-import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
-import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
-import com.heyqing.disk.server.modules.file.po.SecUploadFilePO;
-import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
+import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.po.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -61,4 +55,23 @@ public interface FileConverter {
     @Mapping(target = "parentId", expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(secUploadFilePO.getParentId()))")
     @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
     SecUploadFileContext secUploadFilePO2SecUploadFileContext(SecUploadFilePO secUploadFilePO);
+
+    /**
+     * FileUploadPO转化FileUploadContext
+     *
+     * @param fileUploadPO
+     * @return
+     */
+    @Mapping(target = "parentId", expression = "java(com.heyqing.disk.core.utils.IdUtil.decrypt(fileUploadPO.getParentId()))")
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    FileUploadContext fileUploadPO2FileUploadContext(FileUploadPO fileUploadPO);
+
+    /**
+     * FileUploadContext转化FileSaveContext
+     *
+     * @param context
+     * @return
+     */
+    @Mapping(target = "record",ignore = true)
+    FileSaveContext fileUploadContext2FileSaveContext(FileUploadContext context);
 }

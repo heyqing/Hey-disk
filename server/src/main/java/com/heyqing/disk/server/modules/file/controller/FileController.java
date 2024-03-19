@@ -9,10 +9,8 @@ import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.converter.FileConverter;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
-import com.heyqing.disk.server.modules.file.po.CreateFolderPO;
-import com.heyqing.disk.server.modules.file.po.DeleteFilePO;
-import com.heyqing.disk.server.modules.file.po.SecUploadFilePO;
-import com.heyqing.disk.server.modules.file.po.UpdateFilenamePO;
+import com.heyqing.disk.server.modules.file.po.*;
+import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import io.swagger.annotations.Api;
@@ -125,5 +123,18 @@ public class FileController {
             return Result.success();
         }
         return Result.fail("文件唯一标识不存在，请手动执行文件上传操作");
+    }
+
+    @ApiOperation(
+            value = "单文件上传",
+            notes = "该接口提供了单文件上传的功能",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("file/upload")
+    public Result upload(@Validated FileUploadPO fileUploadPO){
+        FileUploadContext context = fileConverter.fileUploadPO2FileUploadContext(fileUploadPO);
+        iUserFileService.upload(context);
+        return Result.success();
     }
 }

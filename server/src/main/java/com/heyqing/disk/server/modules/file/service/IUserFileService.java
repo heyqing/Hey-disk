@@ -1,6 +1,7 @@
 package com.heyqing.disk.server.modules.file.service;
 
 import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
@@ -29,12 +30,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
     HeyDiskUserFile getUserRootFile(Long userId);
 
     /**
-     * 查询用户的文件信息列表服务
-     *
-     * @param queryFileListContext
+     * 根据条件查询用户的实际文件列表
+     * @param context
      * @return
      */
-    List<HeyDiskUserFileVO> getFileList(QueryFileListContext queryFileListContext);
+    List<HeyDiskUserFileVO> getFileList(QueryFileListContext context);
 
     /**
      * 更新文件名称服务
@@ -57,4 +57,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @return
      */
     boolean secUpload(SecUploadFileContext context);
+
+    /**
+     * 单文件上传服务
+     *
+     * @param context
+     */
+    void upload(FileUploadContext context);
 }

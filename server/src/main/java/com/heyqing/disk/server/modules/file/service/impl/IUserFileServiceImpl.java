@@ -11,6 +11,7 @@ import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.common.event.file.DeleteFileEvent;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.converter.FileConverter;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Date;
@@ -44,6 +46,8 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
 
     @Autowired
     private IFileService iFileService;
+    @Autowired
+    private FileConverter fileConverter;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -93,6 +97,7 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
     public List<HeyDiskUserFileVO> getFileList(QueryFileListContext queryFileListContext) {
         return baseMapper.selectFileList(queryFileListContext);
     }
+
 
     /**
      * 更新文件名称
@@ -148,21 +153,54 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         return true;
     }
 
+    /**
+     * 单文件上传
+     * <p>
+     * 1、上传文件并保存实体文件记录
+     * 2、保存用户文件的关系记录
+     * Transactional(rollbackFor = Exception.class)事物
+     *
+     * @param context
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void upload(FileUploadContext context) {
+        saveFile(context);
+        saveUserFile(context.getParentId(),
+                context.getFilename(),
+                FolderFlagEnum.NO,
+                FileTypeEnum.getFileTypeCode(FileUtil.getFileSuffix(context.getFilename())),
+                context.getRecord().getFileId(),
+                context.getUserId(),
+                context.getRecord().getFileSizeDesc());
+    }
+
 
     /***************************************************private***************************************************/
 
     /**
+     * 上传文件并保存实体文件记录
+     * 委托给实体文件的service去完成该操作
      *
+     * @param context
+     */
+    private void saveFile(FileUploadContext context) {
+        FileSaveContext fileSaveContext = fileConverter.fileUploadContext2FileSaveContext(context);
+        iFileService.saveFile(fileSaveContext);
+        context.setRecord(fileSaveContext.getRecord());
+    }
+
+    /**
      * @param userId
      * @param identifier
      * @return
      */
     private HeyDiskFile getFileByUserIdAndIdentifier(Long userId, String identifier) {
         QueryWrapper queryWrapper = Wrappers.query();
-        queryWrapper.eq("create_user",userId);
-        queryWrapper.eq("identifier",identifier);
+        queryWrapper.eq("create_user", userId);
+        queryWrapper.eq("identifier", identifier);
         List<HeyDiskFile> records = iFileService.list(queryWrapper);
-        if (CollectionUtils.isEmpty(records)){
+        if (CollectionUtils.isEmpty(records)) {
             return null;
         }
         return records.get(HeyDiskConstants.ZERO_INT);
