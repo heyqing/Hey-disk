@@ -17,9 +17,11 @@ import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
 import com.heyqing.disk.server.modules.file.enums.FileTypeEnum;
 import com.heyqing.disk.server.modules.file.enums.FolderFlagEnum;
+import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
+import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
@@ -46,6 +48,8 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
 
     @Autowired
     private IFileService iFileService;
+    @Autowired
+    private IFileChunkService iFileChunkService;
     @Autowired
     private FileConverter fileConverter;
 
@@ -175,6 +179,24 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
                 context.getRecord().getFileSizeDesc());
     }
 
+    /**
+     * 文件分片上传
+     * <p>
+     * 1、上传实体文件
+     * 2、保存分片文件记录
+     * 3、校验是否全部分片上传完成
+     *
+     * @param context
+     * @return
+     */
+    @Override
+    public FileChunkUploadVO chunkUpload(FileChunkUploadContext context) {
+        FileChunkSaveContext fileChunkSaveContext = fileConverter.fileChunkUploadContext2FileChunkSaveContext(context);
+        iFileChunkService.saveChunkFile(fileChunkSaveContext);
+        FileChunkUploadVO vo = new FileChunkUploadVO();
+        vo.setMergeFlag(fileChunkSaveContext.getMergeFlagEnum().getCoda());
+        return vo;
+    }
 
     /***************************************************private***************************************************/
 

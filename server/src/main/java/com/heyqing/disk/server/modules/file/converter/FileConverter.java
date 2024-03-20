@@ -72,6 +72,23 @@ public interface FileConverter {
      * @param context
      * @return
      */
-    @Mapping(target = "record",ignore = true)
+    @Mapping(target = "record", ignore = true)
     FileSaveContext fileUploadContext2FileSaveContext(FileUploadContext context);
+
+    /**
+     * FileChunkUploadPO转化FileChunkUploadContext
+     *
+     * @param fileChunkUploadPO
+     * @return
+     */
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    FileChunkUploadContext fileChunkUploadPO2FileChunkUploadContext(FileChunkUploadPO fileChunkUploadPO);
+
+    /**
+     * FileChunkUploadContext转化FileChunkSaveContext
+     *
+     * @param context
+     * @return
+     */
+    FileChunkSaveContext fileChunkUploadContext2FileChunkSaveContext(FileChunkUploadContext context);
 }

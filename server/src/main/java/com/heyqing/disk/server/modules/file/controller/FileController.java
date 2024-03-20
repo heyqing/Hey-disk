@@ -12,6 +12,7 @@ import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
 import com.heyqing.disk.server.modules.file.po.*;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
+import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -136,5 +137,18 @@ public class FileController {
         FileUploadContext context = fileConverter.fileUploadPO2FileUploadContext(fileUploadPO);
         iUserFileService.upload(context);
         return Result.success();
+    }
+
+    @ApiOperation(
+            value = "文件分片上传",
+            notes = "该接口提供了文件分片上传的功能",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("file/chunk-upload")
+    public Result<FileChunkUploadVO> chunkUpload(@Validated FileChunkUploadPO fileChunkUploadPO){
+        FileChunkUploadContext context = fileConverter.fileChunkUploadPO2FileChunkUploadContext(fileChunkUploadPO);
+        FileChunkUploadVO vo =iUserFileService.chunkUpload(context);
+        return Result.data(vo);
     }
 }
