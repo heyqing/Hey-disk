@@ -2,6 +2,7 @@ package com.heyqing.disk.server.modules.file.context;
 
 import com.heyqing.disk.server.modules.file.enums.MergeFlagEnum;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
 
@@ -47,6 +48,11 @@ public class FileChunkSaveContext implements Serializable {
      * 分片文件实体
      */
     private Long totalSize;
+
+    /**
+     * 文件实体
+     */
+    private MultipartFile file;
 
     /**
      * 当前登录用户id

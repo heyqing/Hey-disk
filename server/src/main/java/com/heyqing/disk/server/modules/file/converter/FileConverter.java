@@ -2,6 +2,7 @@ package com.heyqing.disk.server.modules.file.converter;
 
 import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.po.*;
+import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -91,4 +92,13 @@ public interface FileConverter {
      * @return
      */
     FileChunkSaveContext fileChunkUploadContext2FileChunkSaveContext(FileChunkUploadContext context);
+
+    /**
+     * FileChunkSaveContext转化StoreFileChunkContext
+     *
+     * @param context
+     * @return
+     */
+    @Mapping(target = "realPath", ignore = true)
+    StoreFileChunkContext fileChunkSaveContext2StoreFileChunkContext(FileChunkSaveContext context);
 }

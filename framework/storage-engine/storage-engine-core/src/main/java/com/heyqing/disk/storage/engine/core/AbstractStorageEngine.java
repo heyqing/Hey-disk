@@ -4,6 +4,7 @@ import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.cache.core.constants.CacheConstants;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
+import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
@@ -69,8 +70,48 @@ public abstract class AbstractStorageEngine implements StorageEngine {
         doDelete(context);
     }
 
+    /**
+     * 存储物理文件的分片
+     * <p>
+     * 1、参数校验
+     * 2、执行动作
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    public void storeChunk(StoreFileChunkContext context) throws IOException {
+        checkStoreFileChunkContext(context);
+        doStoreChunk(context);
+    }
+
 
     /*************************************************************private******************************************/
+
+    /**
+     * 执行保存文件分名片分片
+     * 下沉到底层去实现
+     *
+     * @param context
+     * @throws IOException
+     */
+    protected abstract void doStoreChunk(StoreFileChunkContext context) throws IOException;
+
+    /**
+     * 校验保存文件分片的参数
+     *
+     * @param context
+     */
+    private void checkStoreFileChunkContext(StoreFileChunkContext context) {
+        Assert.notBlank(context.getFilename(),"文件名不能为空");
+        Assert.notBlank(context.getIdentifier(),"文件唯一标识不能为空");
+        Assert.notNull(context.getTotalSize(),"文件大小不能为空");
+        Assert.notNull(context.getInputStream(),"文件分片不能为空");
+        Assert.notNull(context.getTotalChunks(),"文件分片总数不能为空");
+        Assert.notNull(context.getChunkNumber(),"文件分片下标不能为空");
+        Assert.notNull(context.getCurrentChunkSize(),"文件分片大小不能为空");
+        Assert.notNull(context.getUserId(),"当前登录用户ID不能为空");
+    }
 
     /**
      * 执行保存物理文件的动作

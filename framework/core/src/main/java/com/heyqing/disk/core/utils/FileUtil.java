@@ -132,9 +132,50 @@ public class FileUtil {
      * @return
      */
     public static String generateDefaultStoreFileRealPath() {
-        return new  StringBuffer(System.getProperty("user.home"))
+        return new StringBuffer(System.getProperty("user.home"))
                 .append(File.separator)
                 .append("heydisk")
+                .toString();
+    }
+
+    /**
+     * 生成默认的文件分片存储路径
+     *
+     * @return
+     */
+    public static String generateDefaultStoreFileChunkRealPath() {
+        return new StringBuffer(System.getProperty("user.home"))
+                .append(File.separator)
+                .append("heydisk")
+                .append(File.separator)
+                .append("chunks")
+                .toString();
+    }
+
+    /**
+     * 生成文件分片的存储路径
+     * <p>
+     * 生成规则：基础路径 + 年 + 月 + 日 + 唯一标识 + 随机的文件名称 + _,_ +文件分片下标
+     *
+     * @param basePath
+     * @param identifier
+     * @param chunkNumber
+     * @return
+     */
+    public static String generateStoreFileChunkRealPath(String basePath, String identifier, Integer chunkNumber) {
+        return new StringBuilder(basePath)
+                .append(File.separator)
+                .append(DateUtil.thisYear())
+                .append(File.separator)
+                .append(DateUtil.thisMonth() + 1)
+                .append(File.separator)
+                .append(DateUtil.thisDayOfMonth())
+                .append(File.separator)
+                .append(identifier)
+                .append(File.separator)
+                .append(UUIDUtil.getUUID())
+                .append(HeyDiskConstants.COMMON_SEPARATOR)
+                .append(chunkNumber)
                 .toString();
     }
 }

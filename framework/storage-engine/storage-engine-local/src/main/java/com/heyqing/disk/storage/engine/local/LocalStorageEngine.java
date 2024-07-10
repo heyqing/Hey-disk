@@ -3,6 +3,7 @@ package com.heyqing.disk.storage.engine.local;
 import com.heyqing.disk.core.utils.FileUtil;
 import com.heyqing.disk.storage.engine.core.AbstractStorageEngine;
 import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
+import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
 import com.heyqing.disk.storage.engine.local.config.LocalStorageEngineConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +36,8 @@ public class LocalStorageEngine extends AbstractStorageEngine {
     @Override
     protected void doStore(StoreFileContext context) throws IOException {
         String basePath = config.getRootFilePath();
-        String realFilePath = FileUtil.generateStoreFileRealPath(basePath,context.getFilename());
-        FileUtil.writeStream2File(context.getInputStream(),new File(realFilePath),context.getTotalSize());
+        String realFilePath = FileUtil.generateStoreFileRealPath(basePath, context.getFilename());
+        FileUtil.writeStream2File(context.getInputStream(), new File(realFilePath), context.getTotalSize());
         context.setRealPath(realFilePath);
     }
 
@@ -49,5 +50,19 @@ public class LocalStorageEngine extends AbstractStorageEngine {
     @Override
     protected void doDelete(DeleteFileContext context) throws IOException {
         FileUtil.deleteFiles(context.getRealFilePathList());
+    }
+
+    /**
+     * 保存文件分片
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    protected void doStoreChunk(StoreFileChunkContext context) throws IOException {
+        String basePath = config.getRootFileChunkPath();
+        String realFilePath = FileUtil.generateStoreFileChunkRealPath(basePath, context.getIdentifier(),context.getChunkNumber());
+        FileUtil.writeStream2File(context.getInputStream(), new File(realFilePath), context.getTotalSize());
+        context.setRealPath(realFilePath);
     }
 }
