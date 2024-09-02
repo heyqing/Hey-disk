@@ -6,6 +6,7 @@ import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
+import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 
 import java.util.List;
 
@@ -74,4 +75,12 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @return
      */
     FileChunkUploadVO chunkUpload(FileChunkUploadContext context);
+
+    /**
+     * 查询用户已上传的分片列表服务
+     *
+     * @param context
+     * @return
+     */
+    UploadedChunksVO getUploadedChunks(QueryUploadedChunksContext context);
 }

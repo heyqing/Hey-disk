@@ -1,15 +1,19 @@
 package com.heyqing.disk.server.modules.file;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.HeyDiskServerLauncher;
 import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskFileChunk;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
+import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
+import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.service.IUserService;
@@ -48,6 +52,8 @@ public class FileTest {
     private IUserService iUserService;
     @Autowired
     private IFileService iFileService;
+    @Autowired
+    private IFileChunkService iFileChunkService;
 
 
     /**
@@ -374,6 +380,35 @@ public class FileTest {
 
     }
 
+    /**
+     * 测试查询用户已上传的分片信息列表-成功
+     */
+    @Test
+    public void testQueryUploadedChunksSuccess(){
+        Long userId = register();
+
+        String identifier = "123456";
+
+        HeyDiskFileChunk record = new HeyDiskFileChunk();
+        record.setId(IdUtil.get());
+        record.setIdentifier(identifier);
+        record.setRealPath("realPath");
+        record.setChunkNumber(1);
+        record.setExpirationTime(DateUtil.offsetDay(new Date(),1));
+        record.setCreateUser(userId);
+        record.setCreateTime(new Date());
+        boolean save = iFileChunkService.save(record);
+        Assert.isTrue(save);
+
+        QueryUploadedChunksContext context = new QueryUploadedChunksContext();
+        context.setIdentifier(identifier);
+        context.setUserId(userId);
+
+        UploadedChunksVO vo = iUserFileService.getUploadedChunks(context);
+        Assert.notNull(vo);
+        Assert.notEmpty(vo.getUploadedChunks());
+
+    }
 
     /***************************************************private***************************************************/
 

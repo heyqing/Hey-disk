@@ -101,4 +101,13 @@ public interface FileConverter {
      */
     @Mapping(target = "realPath", ignore = true)
     StoreFileChunkContext fileChunkSaveContext2StoreFileChunkContext(FileChunkSaveContext context);
+
+    /**
+     * QueryUploadedChunksPO转化QueryUploadedChunksContext
+     *
+     * @param queryUploadedChunksPO
+     * @return
+     */
+    @Mapping(target = "userId", expression = "java(com.heyqing.disk.server.common.utils.UserIdUtil.get())")
+    QueryUploadedChunksContext queryUploadedChunksPO2QueryUploadedChunksContext(QueryUploadedChunksPO queryUploadedChunksPO);
 }
