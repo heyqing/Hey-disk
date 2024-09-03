@@ -165,4 +165,17 @@ public class FileController {
         UploadedChunksVO vo =iUserFileService.getUploadedChunks(context);
         return Result.data(vo);
     }
+
+    @ApiOperation(
+            value = "文件分片合并",
+            notes = "该接口提供了文件分片合并的功能",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @GetMapping("file/merge")
+    public Result mergeFile(@Validated @RequestBody FileChunkMergePO fileChunkMergePO){
+        FileChunkMergeContext context = fileConverter.fileChunkMergePO2FileChunkMergeContext(fileChunkMergePO);
+        iUserFileService.mergeFile(context);
+        return Result.success();
+    }
 }

@@ -1,5 +1,6 @@
 package com.heyqing.disk.server.modules.file.service;
 
+import com.heyqing.disk.server.modules.file.context.FileChunkMergeAndSaveContext;
 import com.heyqing.disk.server.modules.file.context.FileSaveContext;
 import com.heyqing.disk.server.modules.file.context.QueryFileListContext;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
@@ -26,4 +27,10 @@ public interface IFileService extends IService<HeyDiskFile> {
      */
     void saveFile(FileSaveContext context);
 
+    /**
+     * 合并文件分片并保存物理文件记录
+     *
+     * @param fileChunkMergeAndSaveContext
+     */
+    void mergeFileChunksAndSaveFile(FileChunkMergeAndSaveContext fileChunkMergeAndSaveContext);
 }

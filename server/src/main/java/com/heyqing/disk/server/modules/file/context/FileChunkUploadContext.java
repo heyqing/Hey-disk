@@ -1,6 +1,7 @@
 package com.heyqing.disk.server.modules.file.context;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.Serializable;
@@ -45,9 +46,14 @@ public class FileChunkUploadContext implements Serializable {
     private Long currentChunkSize;
 
     /**
-     * 分片文件实体
+     * 分片的总大小
      */
     private Long totalSize;
+
+    /**
+     * 分片文件实体
+     */
+    private MultipartFile file;
 
     /**
      * 当前登录用户id

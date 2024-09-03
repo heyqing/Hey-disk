@@ -3,6 +3,7 @@ package com.heyqing.disk.server.modules.file.po;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -41,8 +42,12 @@ public class FileChunkUploadPO implements Serializable {
     @NotNull(message = "当前分片的大小不能为空")
     private Long currentChunkSize;
 
+    @ApiModelProperty(value = "分片的总大小", required = true)
+    @NotNull(message = "分片的总大小不能为空")
+    private Long totalSize;
+
     @ApiModelProperty(value = "分片文件实体", required = true)
     @NotNull(message = "分片文件实体不能为空")
-    private Long totalSize;
+    private MultipartFile file;
 
 }

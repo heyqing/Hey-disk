@@ -26,6 +26,6 @@ public enum MergeFlagEnum {
      */
     READY(1);
 
-    private Integer coda;
+    private Integer code;
 
 }

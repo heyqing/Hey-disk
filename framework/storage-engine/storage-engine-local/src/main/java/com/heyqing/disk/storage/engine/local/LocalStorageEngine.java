@@ -3,6 +3,7 @@ package com.heyqing.disk.storage.engine.local;
 import com.heyqing.disk.core.utils.FileUtil;
 import com.heyqing.disk.storage.engine.core.AbstractStorageEngine;
 import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
+import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
 import com.heyqing.disk.storage.engine.local.config.LocalStorageEngineConfig;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * ClassName:LocalStorageEngine
@@ -61,8 +64,27 @@ public class LocalStorageEngine extends AbstractStorageEngine {
     @Override
     protected void doStoreChunk(StoreFileChunkContext context) throws IOException {
         String basePath = config.getRootFileChunkPath();
-        String realFilePath = FileUtil.generateStoreFileChunkRealPath(basePath, context.getIdentifier(),context.getChunkNumber());
+        String realFilePath = FileUtil.generateStoreFileChunkRealPath(basePath, context.getIdentifier(), context.getChunkNumber());
         FileUtil.writeStream2File(context.getInputStream(), new File(realFilePath), context.getTotalSize());
+        context.setRealPath(realFilePath);
+    }
+
+    /**
+     * 文件分片合并
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    protected void doMergeFile(MergeFileContext context) throws IOException {
+        String basePath = config.getRootFilePath();
+        String realFilePath = FileUtil.generateStoreFileRealPath(basePath, context.getFilename());
+        FileUtil.createFile(new File(realFilePath));
+        List<String> chunkPaths = context.getRealPathList();
+        for (String chunkPath : chunkPaths) {
+            FileUtil.appendWrite(Paths.get(realFilePath),new File(chunkPath).toPath());
+        }
+        FileUtil.deleteFiles(chunkPaths);
         context.setRealPath(realFilePath);
     }
 }

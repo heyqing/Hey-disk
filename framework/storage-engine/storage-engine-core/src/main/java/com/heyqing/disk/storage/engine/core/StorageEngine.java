@@ -1,6 +1,7 @@
 package com.heyqing.disk.storage.engine.core;
 
 import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
+import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
 
@@ -40,4 +41,12 @@ public interface StorageEngine {
      * @throws IOException
      */
     void storeChunk(StoreFileChunkContext context) throws IOException;
+
+    /**
+     * 合并文件分片
+     *
+     * @param context
+     * @throws IOException
+     */
+    void mergeFile(MergeFileContext context) throws IOException;
 }

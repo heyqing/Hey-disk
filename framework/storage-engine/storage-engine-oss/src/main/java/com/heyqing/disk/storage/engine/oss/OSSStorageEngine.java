@@ -2,6 +2,7 @@ package com.heyqing.disk.storage.engine.oss;
 
 import com.heyqing.disk.storage.engine.core.AbstractStorageEngine;
 import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
+import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
 import org.springframework.stereotype.Component;
@@ -41,8 +42,25 @@ public class OSSStorageEngine extends AbstractStorageEngine {
 
     }
 
+    /**
+     * 保存文件分片
+     *
+     * @param context
+     * @throws IOException
+     */
     @Override
     protected void doStoreChunk(StoreFileChunkContext context) throws IOException {
+
+    }
+
+    /**
+     * 文件分片合并
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    protected void doMergeFile(MergeFileContext context) throws IOException {
 
     }
 }

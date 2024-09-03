@@ -9,15 +9,18 @@ import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFileChunk;
 import com.heyqing.disk.server.modules.file.enums.DelFlagEnum;
+import com.heyqing.disk.server.modules.file.enums.MergeFlagEnum;
 import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
+import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.service.IUserService;
 import com.heyqing.disk.server.modules.user.vo.UserInfoVO;
+import lombok.AllArgsConstructor;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * ClassName:FileTest
@@ -384,7 +388,7 @@ public class FileTest {
      * 测试查询用户已上传的分片信息列表-成功
      */
     @Test
-    public void testQueryUploadedChunksSuccess(){
+    public void testQueryUploadedChunksSuccess() {
         Long userId = register();
 
         String identifier = "123456";
@@ -394,7 +398,7 @@ public class FileTest {
         record.setIdentifier(identifier);
         record.setRealPath("realPath");
         record.setChunkNumber(1);
-        record.setExpirationTime(DateUtil.offsetDay(new Date(),1));
+        record.setExpirationTime(DateUtil.offsetDay(new Date(), 1));
         record.setCreateUser(userId);
         record.setCreateTime(new Date());
         boolean save = iFileChunkService.save(record);
@@ -410,6 +414,21 @@ public class FileTest {
 
     }
 
+    /**
+     * 分片上传整体-成功
+     */
+    @Test
+    public void testUploadWithChunkSuccess() throws InterruptedException {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+        for (int i = 0; i < 10; i++) {
+            new ChunkUploader(countDownLatch, i + 1, 10, iUserFileService, userId, userInfoVO.getRootFileId()).start();
+        }
+        countDownLatch.await();
+    }
+
     /***************************************************private***************************************************/
 
     private final static String USERNAME = "heyqing";
@@ -418,14 +437,67 @@ public class FileTest {
     private final static String ANSWER = "answer";
 
     /**
+     * 文件分片上传器
+     */
+    @AllArgsConstructor
+    private static class ChunkUploader extends Thread {
+        private CountDownLatch countDownLatch;
+        private Integer chunk;
+        private Integer chunks;
+        private IUserFileService iUserFileService;
+        private Long userId;
+        private Long parentId;
+
+        /**
+         * 1、上传文件分片
+         * 2、根据上传的结果来调用文件分片合并
+         */
+        @Override
+        public void run() {
+            super.run();
+            MultipartFile file = generateMultipartFile();
+            long totalSize = file.getSize() * chunks;
+            String filename = "test.txt";
+            String identifier = "123456789";
+
+            FileChunkUploadContext fileChunkUploadContext = new FileChunkUploadContext();
+            fileChunkUploadContext.setFilename(filename);
+            fileChunkUploadContext.setIdentifier(identifier);
+            fileChunkUploadContext.setTotalChunks(chunks);
+            fileChunkUploadContext.setChunkNumber(chunk);
+            fileChunkUploadContext.setCurrentChunkSize(file.getSize());
+            fileChunkUploadContext.setTotalSize(totalSize);
+            fileChunkUploadContext.setFile(file);
+            fileChunkUploadContext.setUserId(userId);
+
+            FileChunkUploadVO vo = iUserFileService.chunkUpload(fileChunkUploadContext);
+
+            if (vo.getMergeFlag().equals(MergeFlagEnum.READY.getCode())) {
+                System.out.println("分片" + chunk + "检测到可以合并分片");
+                FileChunkMergeContext fileChunkMergeContext = new FileChunkMergeContext();
+                fileChunkMergeContext.setFilename(filename);
+                fileChunkMergeContext.setIdentifier(identifier);
+                fileChunkMergeContext.setTotalSize(totalSize);
+                fileChunkMergeContext.setParentId(parentId);
+                fileChunkMergeContext.setUserId(userId);
+
+                iUserFileService.mergeFile(fileChunkMergeContext);
+                countDownLatch.countDown();
+            } else {
+                countDownLatch.countDown();
+            }
+        }
+    }
+
+    /**
      * 生成模拟的网络文件实体
      *
      * @return
      */
-    private MultipartFile generateMultipartFile() {
+    private static MultipartFile generateMultipartFile() {
         MultipartFile file = null;
         try {
-            file = new MockMultipartFile("file","test.txt","multipart/form-data","test upload context".getBytes("UTF-8"));
+            file = new MockMultipartFile("file", "test.txt", "multipart/form-data", "test upload context".getBytes("UTF-8"));
         } catch (Exception e) {
             e.printStackTrace();
         }
