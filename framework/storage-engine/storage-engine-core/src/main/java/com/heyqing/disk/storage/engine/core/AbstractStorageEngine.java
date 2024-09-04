@@ -3,10 +3,7 @@ package com.heyqing.disk.storage.engine.core;
 import cn.hutool.core.lang.Assert;
 import com.heyqing.disk.cache.core.constants.CacheConstants;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
-import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
-import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
+import com.heyqing.disk.storage.engine.core.context.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -101,8 +98,43 @@ public abstract class AbstractStorageEngine implements StorageEngine {
         doMergeFile(context);
     }
 
+    /**
+     * 读取文件内容到输出流中
+     * <p>
+     * 1、参数校验
+     * 2、执行动作
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    public void readFile(ReadFileContext context) throws IOException {
+        checkReadFileContext(context);
+        doReadFile(context);
+    }
+
 
     /*************************************************************private******************************************/
+
+    /**
+     * 读取文件内容并写入输出流中
+     * 下沉到底层去实现
+     *
+     * @param context
+     * @throws IOException
+     */
+    protected abstract void doReadFile(ReadFileContext context) throws IOException;
+
+    /**
+     * 文件参数校验
+     *
+     * @param context
+     */
+    private void checkReadFileContext(ReadFileContext context) {
+        Assert.notBlank(context.getRealPath(), "文件真实路径不能为空");
+        Assert.notNull(context.getOutputStream(), "文件输出流不能为空");
+    }
+
     /**
      * 检查文件分片合并的上下文信息
      *

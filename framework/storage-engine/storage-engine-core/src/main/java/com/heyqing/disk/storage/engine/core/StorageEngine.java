@@ -1,9 +1,6 @@
 package com.heyqing.disk.storage.engine.core;
 
-import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
-import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
+import com.heyqing.disk.storage.engine.core.context.*;
 
 import java.io.IOException;
 
@@ -49,4 +46,12 @@ public interface StorageEngine {
      * @throws IOException
      */
     void mergeFile(MergeFileContext context) throws IOException;
+
+    /**
+     * 读取文件内容到输出流中
+     *
+     * @param context
+     * @throws IOException
+     */
+    void readFile(ReadFileContext context) throws IOException;
 }

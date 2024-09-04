@@ -90,4 +90,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @param context
      */
     void mergeFile(FileChunkMergeContext context);
+
+    /**
+     * 文件下载服务
+     *
+     * @param context
+     */
+    void download(FileDownloadContext context);
 }

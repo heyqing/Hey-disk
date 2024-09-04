@@ -2,15 +2,13 @@ package com.heyqing.disk.storage.engine.local;
 
 import com.heyqing.disk.core.utils.FileUtil;
 import com.heyqing.disk.storage.engine.core.AbstractStorageEngine;
-import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
-import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
+import com.heyqing.disk.storage.engine.core.context.*;
 import com.heyqing.disk.storage.engine.local.config.LocalStorageEngineConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
@@ -82,9 +80,21 @@ public class LocalStorageEngine extends AbstractStorageEngine {
         FileUtil.createFile(new File(realFilePath));
         List<String> chunkPaths = context.getRealPathList();
         for (String chunkPath : chunkPaths) {
-            FileUtil.appendWrite(Paths.get(realFilePath),new File(chunkPath).toPath());
+            FileUtil.appendWrite(Paths.get(realFilePath), new File(chunkPath).toPath());
         }
         FileUtil.deleteFiles(chunkPaths);
         context.setRealPath(realFilePath);
+    }
+
+    /**
+     * 读取文件内容到输出流中
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    protected void doReadFile(ReadFileContext context) throws IOException {
+        File file = new File(context.getRealPath());
+        FileUtil.writeFile2OutputStream(new FileInputStream(file),context.getOutputStream(),file.length());
     }
 }

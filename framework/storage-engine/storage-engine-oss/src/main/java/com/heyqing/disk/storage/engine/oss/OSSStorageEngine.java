@@ -1,10 +1,7 @@
 package com.heyqing.disk.storage.engine.oss;
 
 import com.heyqing.disk.storage.engine.core.AbstractStorageEngine;
-import com.heyqing.disk.storage.engine.core.context.DeleteFileContext;
-import com.heyqing.disk.storage.engine.core.context.MergeFileContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
-import com.heyqing.disk.storage.engine.core.context.StoreFileContext;
+import com.heyqing.disk.storage.engine.core.context.*;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -61,6 +58,17 @@ public class OSSStorageEngine extends AbstractStorageEngine {
      */
     @Override
     protected void doMergeFile(MergeFileContext context) throws IOException {
+
+    }
+
+    /**
+     * 读取文件内容到输出流中
+     *
+     * @param context
+     * @throws IOException
+     */
+    @Override
+    protected void doReadFile(ReadFileContext context) throws IOException {
 
     }
 }
