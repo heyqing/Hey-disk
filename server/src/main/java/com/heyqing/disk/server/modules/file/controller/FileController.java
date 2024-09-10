@@ -13,6 +13,7 @@ import com.heyqing.disk.server.modules.file.po.*;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
+import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 import io.swagger.annotations.Api;
@@ -184,7 +185,7 @@ public class FileController {
             value = "文件下载",
             notes = "该接口提供了文件下载的功能",
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
     @GetMapping("file/download")
     public void download(@NotBlank(message = "文件Id不能为空") @RequestParam(value = "fileId", required = false) String fileId, HttpServletResponse response) {
@@ -193,5 +194,34 @@ public class FileController {
         context.setResponse(response);
         context.setUserId(UserIdUtil.get());
         iUserFileService.download(context);
+    }
+
+    @ApiOperation(
+            value = "文件预览",
+            notes = "该接口提供了文件预览的功能",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
+    )
+    @GetMapping("file/preview")
+    public void preview(@NotBlank(message = "文件Id不能为空") @RequestParam(value = "fileId", required = false) String fileId, HttpServletResponse response) {
+        FilePreviewContext context = new FilePreviewContext();
+        context.setFileId(IdUtil.decrypt(fileId));
+        context.setResponse(response);
+        context.setUserId(UserIdUtil.get());
+        iUserFileService.preview(context);
+    }
+
+    @ApiOperation(
+            value = "查询文件夹树",
+            notes = "该接口提供了查询文件夹数的功能",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @GetMapping("file/folder/tree")
+    public Result<List<FolderTreeNodeVO>> getFolderTree() {
+        QueryFolderTreeContext context = new QueryFolderTreeContext();
+        context.setUserId(UserIdUtil.get());
+        List<FolderTreeNodeVO> result = iUserFileService.getFolderTree(context);
+        return Result.data(result);
     }
 }

@@ -1,7 +1,9 @@
 package com.heyqing.disk.server.modules.file.converter;
 
 import com.heyqing.disk.server.modules.file.context.*;
+import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.heyqing.disk.server.modules.file.po.*;
+import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
 import com.heyqing.disk.storage.engine.core.context.StoreFileChunkContext;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -128,4 +130,15 @@ public interface FileConverter {
      * @return
      */
     FileChunkMergeAndSaveContext fileChunkMergeContext2FileChunkMergeAndSaveContext(FileChunkMergeContext context);
+
+    /**
+     * HeyDiskUserFile转化FolderTreeNodeVO
+     *
+     * @param record
+     * @return
+     */
+    @Mapping(target = "label",source = "record.filename")
+    @Mapping(target = "id",source = "record.fileId")
+    @Mapping(target = "children",expression = "java(com.google.common.collect.Lists.newArrayList())")
+    FolderTreeNodeVO heyDiskUserFile2FolderTreeNodeVO(HeyDiskUserFile record);
 }

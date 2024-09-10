@@ -5,6 +5,7 @@ import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
+import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 
@@ -97,4 +98,19 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @param context
      */
     void download(FileDownloadContext context);
+
+    /**
+     * 文件预览服务
+     *
+     * @param context
+     */
+    void preview(FilePreviewContext context);
+
+    /**
+     * 查询文件夹树服务
+     *
+     * @param context
+     * @return
+     */
+    List<FolderTreeNodeVO> getFolderTree(QueryFolderTreeContext context);
 }

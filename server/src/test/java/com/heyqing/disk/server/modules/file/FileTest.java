@@ -14,6 +14,7 @@ import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
+import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 import com.heyqing.disk.server.modules.user.context.UserLoginContext;
@@ -427,6 +428,40 @@ public class FileTest {
             new ChunkUploader(countDownLatch, i + 1, 10, iUserFileService, userId, userInfoVO.getRootFileId()).start();
         }
         countDownLatch.await();
+    }
+
+    /**
+     * 查询文件夹树-成功
+     */
+    @Test
+    public void testGetFolderTreeNodeVOListSuccess() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name-1");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long fileId = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        createFolderContext.setFolderName("folder-name-2");
+        fileId = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        createFolderContext.setFolderName("folder-name-2-1");
+        createFolderContext.setParentId(fileId);
+        iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(fileId);
+
+        QueryFolderTreeContext queryFolderTreeContext = new QueryFolderTreeContext();
+        queryFolderTreeContext.setUserId(userId);
+
+        List<FolderTreeNodeVO> folderTree = iUserFileService.getFolderTree(queryFolderTreeContext);
+
+        Assert.isTrue(folderTree.size() == 1);
+        folderTree.stream().forEach(FolderTreeNodeVO::print);
     }
 
     /***************************************************private***************************************************/

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
 import com.heyqing.disk.core.constants.HeyDiskConstants;
 import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.FileUtil;
@@ -24,10 +25,12 @@ import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
 import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
+import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
 import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
 import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
 import com.heyqing.disk.storage.engine.core.StorageEngine;
 import com.heyqing.disk.storage.engine.core.context.ReadFileContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,15 +39,11 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -272,8 +271,93 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         doDownload(record, context.getResponse());
     }
 
+    /**
+     * 文件预览
+     * <p>
+     * 1、参数校验：文件是否存在；文件是否属于该用户
+     * 2、校验该文件是否为文件夹
+     * 3、文件预览操作
+     *
+     * @param context
+     */
+    @Override
+    public void preview(FilePreviewContext context) {
+        HeyDiskUserFile record = getById(context.getFileId());
+        checkOperatePermission(record, context.getUserId());
+        if (checkIsFolder(record)) {
+            throw new HeyDiskBusinessException("文件夹暂不支持下载");
+        }
+        daPreview(record, context.getResponse());
+    }
+
+    /**
+     * 查询文件夹树
+     * <p>
+     * 1、查询出该用户的所有文件夹列表
+     * 2、在内存中拼接文件夹树
+     *
+     * @param context
+     * @return
+     */
+    @Override
+    public List<FolderTreeNodeVO> getFolderTree(QueryFolderTreeContext context) {
+        List<HeyDiskUserFile> folderRecords = queryFolderRecords(context.getUserId());
+        List<FolderTreeNodeVO> result = assembleFolderTreeNodeVOList(folderRecords);
+        return result;
+    }
+
 
     /***************************************************private***************************************************/
+
+    /**
+     * 查询出该用户的所有文件夹列表
+     *
+     * @param userId
+     * @return
+     */
+    private List<HeyDiskUserFile> queryFolderRecords(Long userId) {
+        QueryWrapper queryWrapper = Wrappers.query();
+        queryWrapper.eq("user_id", userId);
+        queryWrapper.eq("folder_flag", FolderFlagEnum.YES.getCode());
+        queryWrapper.eq("del_flag", DelFlagEnum.NO.getCode());
+        return list(queryWrapper);
+    }
+
+    /**
+     * 在内存中拼接文件夹树
+     *
+     * @param folderRecords
+     * @return
+     */
+    private List<FolderTreeNodeVO> assembleFolderTreeNodeVOList(List<HeyDiskUserFile> folderRecords) {
+        if (CollectionUtils.isEmpty(folderRecords)) {
+            return Lists.newArrayList();
+        }
+        List<FolderTreeNodeVO> mappedFolderTreeNodeVOList = folderRecords.stream().map(fileConverter::heyDiskUserFile2FolderTreeNodeVO).collect(Collectors.toList());
+        Map<Long, List<FolderTreeNodeVO>> mappedFolderTreeNodeVOMap = mappedFolderTreeNodeVOList.stream().collect(Collectors.groupingBy(FolderTreeNodeVO::getParentId));
+        for (FolderTreeNodeVO node : mappedFolderTreeNodeVOList) {
+            List<FolderTreeNodeVO> children = mappedFolderTreeNodeVOMap.get(node.getId());
+            if (CollectionUtils.isNotEmpty(children)) {
+                node.getChildren().addAll(children);
+            }
+        }
+        return mappedFolderTreeNodeVOList.stream().filter(node -> Objects.equals(node.getParentId(), FileConstants.TOP_PARENT_ID)).collect(Collectors.toList());
+    }
+
+    /**
+     * 文件预览操作
+     *
+     * @param record
+     * @param response
+     */
+    private void daPreview(HeyDiskUserFile record, HttpServletResponse response) {
+        HeyDiskFile realFileRecord = iFileService.getById(record.getRealFileId());
+        if (Objects.isNull(realFileRecord)) {
+            throw new HeyDiskBusinessException("当前的文件记录不存在");
+        }
+        addCommonResponseHeader(response, realFileRecord.getFilePreviewContentType());
+        realFile2OutputStream(realFileRecord.getRealPath(), response);
+    }
 
     /**
      * 校验用户的操作权限
