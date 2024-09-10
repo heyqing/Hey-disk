@@ -113,4 +113,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @return
      */
     List<FolderTreeNodeVO> getFolderTree(QueryFolderTreeContext context);
+
+    /**
+     * 文件转移服务
+     *
+     * @param context
+     */
+    void transfer(TransferFileContext context);
 }

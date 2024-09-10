@@ -306,8 +306,107 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         return result;
     }
 
+    /**
+     * 文件转移
+     * <p>
+     * 1、权限校验
+     * 2、执行动作
+     *
+     * @param context
+     */
+    @Override
+    public void transfer(TransferFileContext context) {
+        checkTransferCondition(context);
+        doTransfer(context);
+    }
+
 
     /***************************************************private***************************************************/
+
+    /**
+     * 执行动作
+     *
+     * @param context
+     */
+    private void doTransfer(TransferFileContext context) {
+        List<HeyDiskUserFile> prepareRecords = context.getPrepareRecords();
+        prepareRecords.stream().forEach(record -> {
+            record.setParentId(context.getTargetParentId());
+            record.setUserId(context.getUserId());
+            record.setCreateUser(context.getUserId());
+            record.setCreateTime(new Date());
+            record.setUpdateUser(context.getUserId());
+            record.setUpdateTime(new Date());
+        });
+        if (!updateBatchById(prepareRecords)) {
+            throw new HeyDiskBusinessException("文件转移失败");
+        }
+    }
+
+    /**
+     * 权限校验
+     * <p>
+     * 1、目标文件必须为文件夹
+     * 2、要转移文件列表不能含有目标文件夹以及子目录
+     *
+     * @param context
+     */
+    private void checkTransferCondition(TransferFileContext context) {
+        Long targetParentId = context.getTargetParentId();
+        if (!checkIsFolder(getById(targetParentId))) {
+            throw new HeyDiskBusinessException("目标文件不是文件夹");
+        }
+        List<Long> fileIdList = context.getFileIdList();
+        List<HeyDiskUserFile> prepareRecords = listByIds(fileIdList);
+        context.setPrepareRecords(prepareRecords);
+        if (checkIsChildrenFolder(prepareRecords, targetParentId, context.getUserId())) {
+            throw new HeyDiskBusinessException("目标文件夹不能是选中文件夹或其子文件夹");
+        }
+    }
+
+    /**
+     * 校验要转移文件列表不能含有目标文件夹以及子目录
+     * <p>
+     * 1、若要操作的文件列表下无文件夹-false
+     * 2、拼接文件夹id以及所有子文件夹id，判断存在即可
+     *
+     * @param prepareRecords
+     * @param targetParentId
+     * @param userId
+     * @return
+     */
+    private boolean checkIsChildrenFolder(List<HeyDiskUserFile> prepareRecords, Long targetParentId, Long userId) {
+        prepareRecords = prepareRecords.stream().filter(record -> Objects.equals(record.getFolderFlag(), FolderFlagEnum.YES.getCode())).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(prepareRecords)) {
+            return false;
+        }
+        List<HeyDiskUserFile> folderRecords = queryFolderRecords(userId);
+        Map<Long, List<HeyDiskUserFile>> folderRecordMap = folderRecords.stream().collect(Collectors.groupingBy(HeyDiskUserFile::getParentId));
+        List<HeyDiskUserFile> unavailableFolderRecords = Lists.newArrayList();
+        prepareRecords.stream().forEach(record -> findAllChildrenFolderRecords(unavailableFolderRecords, folderRecordMap, record));
+        List<Long> unavailableFolderRecordIds = unavailableFolderRecords.stream().map(HeyDiskUserFile::getFileId).collect(Collectors.toList());
+        return unavailableFolderRecordIds.contains(targetParentId);
+    }
+
+    /**
+     * 查找文件夹的所有子文件夹记录
+     *
+     * @param unavailableFolderRecords
+     * @param folderRecordMap
+     * @param record
+     */
+    private void findAllChildrenFolderRecords(List<HeyDiskUserFile> unavailableFolderRecords, Map<Long, List<HeyDiskUserFile>> folderRecordMap, HeyDiskUserFile record) {
+        if (Objects.isNull(record)) {
+            return;
+        }
+        List<HeyDiskUserFile> childFolderRecords = folderRecordMap.get(record.getFileId());
+        if (CollectionUtils.isEmpty(childFolderRecords)) {
+            return;
+        }
+        unavailableFolderRecords.addAll(childFolderRecords);
+        childFolderRecords.stream().forEach(childRecord -> findAllChildrenFolderRecords(unavailableFolderRecords, folderRecordMap, childRecord));
+    }
+
 
     /**
      * 查询出该用户的所有文件夹列表
