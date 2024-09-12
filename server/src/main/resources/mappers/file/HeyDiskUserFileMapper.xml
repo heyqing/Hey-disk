@@ -51,4 +51,26 @@
         </if>
         and del_flag = #{param.delFlag}
     </select>
+    <select id="searchFile" resultType="com.heyqing.disk.server.modules.file.vo.FileSearchResultVO">
+        select
+        file_id as fileId,
+        parent_id as parentId,
+        filename as filename,
+        file_size_desc as fileSizeDesc,
+        folder_flag as folderFlag,
+        file_type as fileType,
+        update_time as updateTime
+        from
+        hey_disk_user_file
+        where
+        user_id = #{param.userId}
+        and filename like concat(#{param.keyword},'%')
+        <if test="param.fileTypeArray != null">
+            and file_type in
+            <foreach collection="param.fileTypeArray" open="(" close=")" item="item" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        and del_flag = 0
+    </select>
 </mapper>

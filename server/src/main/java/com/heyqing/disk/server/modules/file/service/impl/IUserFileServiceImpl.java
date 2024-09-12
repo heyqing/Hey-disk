@@ -10,6 +10,7 @@ import com.heyqing.disk.core.exception.HeyDiskBusinessException;
 import com.heyqing.disk.core.utils.FileUtil;
 import com.heyqing.disk.core.utils.IdUtil;
 import com.heyqing.disk.server.common.event.file.DeleteFileEvent;
+import com.heyqing.disk.server.common.event.search.UserSearchEvent;
 import com.heyqing.disk.server.common.utils.HttpUtil;
 import com.heyqing.disk.server.modules.file.constants.FileConstants;
 import com.heyqing.disk.server.modules.file.context.*;
@@ -24,10 +25,7 @@ import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
 import com.heyqing.disk.server.modules.file.mapper.HeyDiskUserFileMapper;
-import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
-import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
-import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
-import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
+import com.heyqing.disk.server.modules.file.vo.*;
 import com.heyqing.disk.storage.engine.core.StorageEngine;
 import com.heyqing.disk.storage.engine.core.context.ReadFileContext;
 import org.apache.commons.collections.CollectionUtils;
@@ -334,8 +332,63 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         doCopy(context);
     }
 
+    /**
+     * 文件搜索
+     * <p>
+     * 1、执行文件搜索
+     * 2、拼接文件的父文件夹名称
+     * 3、执行文件搜索的后置操作
+     *
+     * @param context
+     * @return
+     */
+    @Override
+    public List<FileSearchResultVO> search(FileSearchContext context) {
+        List<FileSearchResultVO> result = daSearch(context);
+        fillParentFilename(result);
+        afterSearch(context);
+        return result;
+    }
 
-/***************************************************private***************************************************/
+
+    /***************************************************private***************************************************/
+
+    /**
+     * 搜索到后置操作
+     * <p>
+     * 1、发布文件搜索的事件
+     *
+     * @param context
+     */
+    private void afterSearch(FileSearchContext context) {
+        UserSearchEvent event = new UserSearchEvent(this, context.getKeyword(), context.getUserId());
+        applicationContext.publishEvent(event);
+    }
+
+    /**
+     * 填充文件列表的父文件名称
+     *
+     * @param result
+     */
+    private void fillParentFilename(List<FileSearchResultVO> result) {
+        if (CollectionUtils.isEmpty(result)) {
+            return;
+        }
+        List<Long> parentIdList = result.stream().map(FileSearchResultVO::getParentId).collect(Collectors.toList());
+        List<HeyDiskUserFile> parentRecords = listByIds(parentIdList);
+        Map<Long, String> fileId2filenameMap = parentRecords.stream().collect(Collectors.toMap(HeyDiskUserFile::getFileId, HeyDiskUserFile::getFilename));
+        result.stream().forEach(vo -> vo.setParentFilename(fileId2filenameMap.get(vo.getParentId())));
+    }
+
+    /**
+     * 搜索文件列表
+     *
+     * @param context
+     * @return
+     */
+    private List<FileSearchResultVO> daSearch(FileSearchContext context) {
+        return baseMapper.searchFile(context);
+    }
 
     /**
      * 权限校验

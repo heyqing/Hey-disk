@@ -4,10 +4,7 @@ import com.heyqing.disk.server.modules.file.context.*;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskFile;
 import com.heyqing.disk.server.modules.file.entity.HeyDiskUserFile;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
-import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
-import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
-import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
+import com.heyqing.disk.server.modules.file.vo.*;
 
 import java.util.List;
 
@@ -127,4 +124,12 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @param context
      */
     void copy(CopyFileContext context);
+
+    /**
+     * 文件搜索服务
+     *
+     * @param context
+     * @return
+     */
+    List<FileSearchResultVO> search(FileSearchContext context);
 }

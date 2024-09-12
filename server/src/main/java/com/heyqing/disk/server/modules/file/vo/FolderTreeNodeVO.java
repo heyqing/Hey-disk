@@ -19,7 +19,7 @@ import java.util.List;
  * @Date:2024/9/9
  * @Author:Heyqing
  */
-@ApiModel
+@ApiModel("文件夹树节点实体")
 @Data
 public class FolderTreeNodeVO implements Serializable {
     private static final long serialVersionUID = 644808889730820016L;

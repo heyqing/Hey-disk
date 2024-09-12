@@ -11,18 +11,17 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * ClassName:HeyDiskUserFileVO
+ * ClassName:FileSearchResultVO
  * Package:com.heyqing.disk.server.modules.file.vo
  * Description:
- *用户查询文件列表响应实体
- * @Date:2024/1/17
+ *
+ * @Date:2024/9/12
  * @Author:Heyqing
  */
 @Data
-@ApiModel(value = "文件列表响应实体")
-public class HeyDiskUserFileVO implements Serializable {
-
-    private static final long serialVersionUID = 2633068457405332294L;
+@ApiModel("文件搜索响应实体")
+public class FileSearchResultVO implements Serializable {
+    private static final long serialVersionUID = -7802484817416969924L;
 
     @ApiModelProperty(value = "文件id")
     @JsonSerialize(using = IdEncryptSerializer.class)
@@ -32,6 +31,8 @@ public class HeyDiskUserFileVO implements Serializable {
     @JsonSerialize(using = IdEncryptSerializer.class)
     private Long parentId;
 
+    @ApiModelProperty(value = "父文件夹名称")
+    private String parentFilename;
     @ApiModelProperty(value = "文件名称")
     private String filename;
 
@@ -47,6 +48,4 @@ public class HeyDiskUserFileVO implements Serializable {
     @ApiModelProperty(value = "文件更新时间")
     @JsonSerialize(using = Date2StringSerializer.class)
     private Date updateTime;
-
-
 }

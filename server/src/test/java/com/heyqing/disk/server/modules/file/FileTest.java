@@ -13,10 +13,7 @@ import com.heyqing.disk.server.modules.file.enums.MergeFlagEnum;
 import com.heyqing.disk.server.modules.file.service.IFileChunkService;
 import com.heyqing.disk.server.modules.file.service.IFileService;
 import com.heyqing.disk.server.modules.file.service.IUserFileService;
-import com.heyqing.disk.server.modules.file.vo.FileChunkUploadVO;
-import com.heyqing.disk.server.modules.file.vo.FolderTreeNodeVO;
-import com.heyqing.disk.server.modules.file.vo.HeyDiskUserFileVO;
-import com.heyqing.disk.server.modules.file.vo.UploadedChunksVO;
+import com.heyqing.disk.server.modules.file.vo.*;
 import com.heyqing.disk.server.modules.user.context.UserLoginContext;
 import com.heyqing.disk.server.modules.user.context.UserRegisterContext;
 import com.heyqing.disk.server.modules.user.service.IUserService;
@@ -589,6 +586,32 @@ public class FileTest {
         context.setFileIdList(Lists.newArrayList(folder1));
         context.setUserId(userId);
         iUserFileService.copy(context);
+    }
+
+    /**
+     * 文件搜索-成功
+     */
+    @Test
+    public void testFileSearchSuccess() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name-1");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long folder1 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder1);
+        FileSearchContext context = new FileSearchContext();
+        context.setUserId(userId);
+        context.setKeyword("folder-name");
+        List<FileSearchResultVO> result = iUserFileService.search(context);
+        Assert.notEmpty(result);
+
+        context.setKeyword("name-1");
+        result = iUserFileService.search(context);
+        Assert.isTrue(CollectionUtils.isEmpty(result));
     }
 
     /***************************************************private***************************************************/
