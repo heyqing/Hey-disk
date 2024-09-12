@@ -243,4 +243,23 @@ public class FileController {
         iUserFileService.transfer(context);
         return Result.success();
     }
+
+    @ApiOperation(
+            value = "文件复制",
+            notes = "该接口提供了文件复制的功能",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @PostMapping("file/copy")
+    public Result copy(@Validated @RequestBody CopyFilePO copyFilePO) {
+        String fileIds = copyFilePO.getFileIds();
+        String targetParentId = copyFilePO.getTargetParentId();
+        List<Long> fileIdList = Splitter.on(HeyDiskConstants.COMMON_SEPARATOR).splitToList(fileIds).stream().map(IdUtil::decrypt).collect(Collectors.toList());
+        CopyFileContext context = new CopyFileContext();
+        context.setFileIdList(fileIdList);
+        context.setTargetParentId(IdUtil.decrypt(targetParentId));
+        context.setUserId(UserIdUtil.get());
+        iUserFileService.copy(context);
+        return Result.success();
+    }
 }

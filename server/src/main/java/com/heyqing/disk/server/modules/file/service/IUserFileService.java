@@ -120,4 +120,11 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @param context
      */
     void transfer(TransferFileContext context);
+
+    /**
+     * 文件复制服务
+     *
+     * @param context
+     */
+    void copy(CopyFileContext context);
 }

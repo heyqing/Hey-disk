@@ -528,6 +528,69 @@ public class FileTest {
         iUserFileService.transfer(context);
     }
 
+    /**
+     * 文件复制-成功
+     */
+    @Test
+    public void testCopyFileSuccess() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name-1");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long folder1 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder1);
+
+        createFolderContext.setFolderName("folder-name-2");
+        Long folder2 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder2);
+
+        CopyFileContext context = new CopyFileContext();
+        context.setTargetParentId(folder1);
+        context.setFileIdList(Lists.newArrayList(folder2));
+        context.setUserId(userId);
+        iUserFileService.copy(context);
+
+        QueryFileListContext queryFileListContext = new QueryFileListContext();
+        queryFileListContext.setParentId(folder1);
+        queryFileListContext.setUserId(userId);
+        queryFileListContext.setDelFlag(DelFlagEnum.NO.getCode());
+        List<HeyDiskUserFileVO> records = iUserFileService.getFileList(queryFileListContext);
+        Assert.notEmpty(records);
+    }
+
+    /**
+     * 文件复制-失败
+     */
+    @Test(expected = HeyDiskBusinessException.class)
+    public void testCopyFileFail() {
+        //目标文件夹为要转移文件列表的文件夹或子文件夹
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name-1");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long folder1 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder1);
+
+        createFolderContext.setParentId(folder1);
+        createFolderContext.setFolderName("folder-name-2");
+        Long folder2 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder2);
+
+        CopyFileContext context = new CopyFileContext();
+        context.setTargetParentId(folder2);
+        context.setFileIdList(Lists.newArrayList(folder1));
+        context.setUserId(userId);
+        iUserFileService.copy(context);
+    }
+
     /***************************************************private***************************************************/
 
     private final static String USERNAME = "heyqing";

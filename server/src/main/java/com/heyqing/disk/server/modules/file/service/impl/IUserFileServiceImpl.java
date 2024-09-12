@@ -320,8 +320,101 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         doTransfer(context);
     }
 
+    /**
+     * 文件复制
+     * <p>
+     * 1、条件校验
+     * 2、执行动作
+     *
+     * @param context
+     */
+    @Override
+    public void copy(CopyFileContext context) {
+        checkCopyCondition(context);
+        doCopy(context);
+    }
 
-    /***************************************************private***************************************************/
+
+/***************************************************private***************************************************/
+
+    /**
+     * 权限校验
+     * <p>
+     * 1、目标文件必须为文件夹
+     * 2、要转移文件列表不能含有目标文件夹以及子目录
+     *
+     * @param context
+     */
+    private void checkCopyCondition(CopyFileContext context) {
+        Long targetParentId = context.getTargetParentId();
+        if (!checkIsFolder(getById(targetParentId))) {
+            throw new HeyDiskBusinessException("目标文件不是文件夹");
+        }
+        List<Long> fileIdList = context.getFileIdList();
+        List<HeyDiskUserFile> prepareRecords = listByIds(fileIdList);
+        context.setPrepareRecords(prepareRecords);
+        if (checkIsChildrenFolder(prepareRecords, targetParentId, context.getUserId())) {
+            throw new HeyDiskBusinessException("目标文件夹不能是选中文件夹或其子文件夹");
+        }
+    }
+
+    /**
+     * @param context
+     */
+    private void doCopy(CopyFileContext context) {
+        List<HeyDiskUserFile> prepareRecords = context.getPrepareRecords();
+        if (CollectionUtils.isNotEmpty(prepareRecords)) {
+            List<HeyDiskUserFile> allRecords = Lists.newArrayList();
+            prepareRecords.stream().forEach(record -> assembleCopyChildRecord(allRecords, record, context.getTargetParentId(), context.getUserId()));
+            if (!saveBatch(allRecords)) {
+                throw new HeyDiskBusinessException("文件复制失败");
+            }
+        }
+    }
+
+    /**
+     * 拼装当前文件记录以及所有的子文件记录
+     *
+     * @param allRecords
+     * @param record
+     * @param targetParentId
+     * @param userId
+     */
+    private void assembleCopyChildRecord(List<HeyDiskUserFile> allRecords, HeyDiskUserFile record, Long targetParentId, Long userId) {
+        Long newFileId = IdUtil.get();
+        Long oldFileId = record.getFileId();
+
+        record.setParentId(targetParentId);
+        record.setFileId(newFileId);
+        record.setUserId(userId);
+        record.setCreateUser(userId);
+        record.setCreateTime(new Date());
+        record.setUpdateUser(userId);
+        record.setUpdateTime(new Date());
+        handleDuplicateFilename(record);
+
+        allRecords.add(record);
+        if (checkIsFolder(record)) {
+            List<HeyDiskUserFile> childRecords = findChildRecords(oldFileId);
+            if (CollectionUtils.isEmpty(childRecords)) {
+                return;
+            }
+            childRecords.stream().forEach(childRecord -> assembleCopyChildRecord(allRecords, childRecord, newFileId, userId));
+        }
+    }
+
+    /**
+     * 查找下一级的文件记录
+     *
+     * @param parentId
+     * @return
+     */
+    private List<HeyDiskUserFile> findChildRecords(Long parentId) {
+        QueryWrapper queryWrapper = Wrappers.query();
+        queryWrapper.eq("parent_id", parentId);
+        queryWrapper.eq("del_flag", DelFlagEnum.NO.getCode());
+        return list(queryWrapper);
+    }
 
     /**
      * 执行动作
@@ -337,6 +430,7 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
             record.setCreateTime(new Date());
             record.setUpdateUser(context.getUserId());
             record.setUpdateTime(new Date());
+            handleDuplicateFilename(record);
         });
         if (!updateBatchById(prepareRecords)) {
             throw new HeyDiskBusinessException("文件转移失败");
@@ -383,6 +477,7 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         List<HeyDiskUserFile> folderRecords = queryFolderRecords(userId);
         Map<Long, List<HeyDiskUserFile>> folderRecordMap = folderRecords.stream().collect(Collectors.groupingBy(HeyDiskUserFile::getParentId));
         List<HeyDiskUserFile> unavailableFolderRecords = Lists.newArrayList();
+        unavailableFolderRecords.addAll(prepareRecords);
         prepareRecords.stream().forEach(record -> findAllChildrenFolderRecords(unavailableFolderRecords, folderRecordMap, record));
         List<Long> unavailableFolderRecordIds = unavailableFolderRecords.stream().map(HeyDiskUserFile::getFileId).collect(Collectors.toList());
         return unavailableFolderRecordIds.contains(targetParentId);
