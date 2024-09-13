@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -267,7 +268,7 @@ public class FileController {
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE
     )
-    @PostMapping("file/search")
+    @GetMapping("file/search")
     public Result<List<FileSearchResultVO>> search(@Validated FileSearchPO fileSearchPO) {
         FileSearchContext context = new FileSearchContext();
         context.setKeyword(fileSearchPO.getKeyword());
@@ -278,6 +279,21 @@ public class FileController {
             context.setFileTypeArray(fileTypeArray);
         }
         List<FileSearchResultVO> result = iUserFileService.search(context);
+        return Result.data(result);
+    }
+
+    @ApiOperation(
+            value = "查询面包屑列表",
+            notes = "该接口提供了查询面包屑列表的功能",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    )
+    @GetMapping("file/breadcrumb")
+    public Result<List<BreadcrumbVO>> getBreadcrumbs(@NotNull(message = "文件id不能为空") @RequestParam(value = "fileId",required = false) String fileId) {
+        QueryBreadcrumbsContext context = new QueryBreadcrumbsContext();
+        context.setFileId(IdUtil.decrypt(fileId));
+        context.setUserId(UserIdUtil.get());
+        List<BreadcrumbVO> result = iUserFileService.getBreadcrumbs(context);
         return Result.data(result);
     }
 }

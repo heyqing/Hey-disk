@@ -350,6 +350,31 @@ public class IUserFileServiceImpl extends ServiceImpl<HeyDiskUserFileMapper, Hey
         return result;
     }
 
+    /**
+     * 文件面包屑搜索
+     * <p>
+     * 1、获取用户所有文件夹信息
+     * 2、拼接需要用到的面包屑列表
+     *
+     * @param context
+     * @return
+     */
+    @Override
+    public List<BreadcrumbVO> getBreadcrumbs(QueryBreadcrumbsContext context) {
+        List<HeyDiskUserFile> folderRecords = queryFolderRecords(context.getUserId());
+        Map<Long, BreadcrumbVO> prepareBreadcrumbVOMap = folderRecords.stream().map(BreadcrumbVO::transfer).collect(Collectors.toMap(BreadcrumbVO::getId, a -> a));
+        BreadcrumbVO currentNode;
+        Long fileId = context.getFileId();
+        List<BreadcrumbVO> result = Lists.newArrayList();
+        do {
+            currentNode = prepareBreadcrumbVOMap.get(fileId);
+            if (Objects.nonNull(currentNode)) {
+                result.add(0, currentNode);
+                fileId = currentNode.getParentId();
+            }
+        } while (Objects.nonNull(currentNode));
+        return result;
+    }
 
     /***************************************************private***************************************************/
 

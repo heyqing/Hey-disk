@@ -132,4 +132,12 @@ public interface IUserFileService extends IService<HeyDiskUserFile> {
      * @return
      */
     List<FileSearchResultVO> search(FileSearchContext context);
+
+    /**
+     * 获取面包屑列表服务
+     *
+     * @param context
+     * @return
+     */
+    List<BreadcrumbVO> getBreadcrumbs(QueryBreadcrumbsContext context);
 }

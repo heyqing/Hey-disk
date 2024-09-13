@@ -614,6 +614,31 @@ public class FileTest {
         Assert.isTrue(CollectionUtils.isEmpty(result));
     }
 
+    /**
+     * 文件面包屑查询-成功
+     */
+    @Test
+    public void getBreadcrumbsSuccess() {
+        Long userId = register();
+        UserInfoVO userInfoVO = info(userId);
+
+        CreateFolderContext createFolderContext = new CreateFolderContext();
+        createFolderContext.setFolderName("folder-name-1");
+        createFolderContext.setParentId(userInfoVO.getRootFileId());
+        createFolderContext.setUserId(userId);
+
+        Long folder1 = iUserFileService.createFolder(createFolderContext);
+        Assert.notNull(folder1);
+
+        QueryBreadcrumbsContext context = new QueryBreadcrumbsContext();
+        context.setFileId(folder1);
+        context.setUserId(userId);
+
+        List<BreadcrumbVO> breadcrumbs = iUserFileService.getBreadcrumbs(context);
+        Assert.notEmpty(breadcrumbs);
+        Assert.isTrue(breadcrumbs.size() == 2);
+    }
+
     /***************************************************private***************************************************/
 
     private final static String USERNAME = "heyqing";
